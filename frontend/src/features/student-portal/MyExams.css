@@ -1,0 +1,128 @@
+.my-exams-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.75rem;
+  background: #FFFEF9;
+  border: 1px solid #E7DCC2;
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(30, 41, 59, 0.06);
+}
+
+.my-exams-container > h1:first-child {
+  font-size: 1.6rem;
+  margin-bottom: 0.25rem;
+}
+
+.exams-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin: 1.1rem 0 0;
+}
+
+.exam-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid #E7DCC2;
+  border-radius: 14px;
+  padding: 1.1rem 1.2rem;
+  background: #FFFDF4;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.exam-card:hover {
+  transform: translateY(-2px);
+  border-color: #E8CFA8;
+  box-shadow: 0 8px 24px rgba(154, 95, 43, 0.12);
+}
+
+.exam-info h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+}
+
+.meta {
+  color: #6F6759;
+  font-size: 0.87rem;
+  margin: 0.15rem 0;
+}
+
+.chip {
+  display: inline-block;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-top: 0.45rem;
+  margin-right: 0.35rem;
+  border: 1px solid transparent;
+  background: #F1EEDF;
+  color: #4A4438;
+}
+
+.chip-open,
+.chip-in_progress {
+  background: #E9EFE0;
+  color: #2F3A26;
+  border-color: #C4D1B4;
+}
+
+.chip-upcoming {
+  background: #F6E8D2;
+  color: #4A2E14;
+  border-color: #E8CFA8;
+}
+
+.chip-closed,
+.chip-voided {
+  background: #F1EEDF;
+  color: #6F6759;
+  border-color: #E7DCC2;
+}
+
+.chip-submitted,
+.chip-auto_submitted {
+  background: #F6E8D2;
+  color: #4A2E14;
+  border-color: #DB9558;
+}
+
+.exam-actions {
+  flex-shrink: 0;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.empty {
+  color: #6F6759;
+  background: #FFFDF4;
+  border: 1px dashed #C4D1B4;
+  border-radius: 12px;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.loading {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #6F6759;
+}
+
+@media (max-width: 640px) {
+  .exam-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

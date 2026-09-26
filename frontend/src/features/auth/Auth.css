@@ -1,0 +1,243 @@
+/* Auth pages — caramel / cream / sage theme (UI_UX_SPEC.md §4.1) */
+
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(700px 320px at 15% 10%, #F3E3C6 0%, transparent 60%),
+    radial-gradient(700px 300px at 85% 15%, #DDE5CC 0%, transparent 55%),
+    radial-gradient(600px 300px at 50% 100%, #F0D9B5 0%, transparent 60%),
+    #FCF9EA;
+}
+
+.auth-card {
+  background: #FFFEF9;
+  border: 1px solid #E7DCC2;
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(154, 95, 43, 0.16);
+  width: 100%;
+  max-width: 460px;
+  padding: 40px 36px;
+}
+
+.auth-badge {
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: #F6E8D2;
+  color: #4A2E14;
+  border: 1px solid #E8CFA8;
+  margin-bottom: 14px;
+}
+
+.auth-header {
+  text-align: left;
+  margin-bottom: 26px;
+}
+
+.auth-header h1 {
+  font-size: 22px;
+  color: #2E2A23;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+
+.auth-header h2 {
+  font-size: 15px;
+  color: #6F6759;
+  font-weight: 500;
+  margin: 0;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #4A4438;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 11px 13px;
+  border: 1.5px solid #E7DCC2;
+  border-radius: 10px;
+  font-size: 14.5px;
+  background: #FFFDF4;
+  color: #2E2A23;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #DB9558;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(219, 149, 88, 0.22);
+}
+
+.form-group input:disabled,
+.form-group select:disabled,
+.form-group textarea:disabled {
+  background-color: #F1EEDF;
+  cursor: not-allowed;
+}
+
+.auth-card .btn-primary {
+  width: 100%;
+  padding: 12px 20px;
+  margin-top: 4px;
+  border-radius: 12px;
+}
+
+.error-message {
+  padding: 12px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+.field-error {
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.auth-footer {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 14px;
+  color: #6F6759;
+}
+
+.auth-footer a {
+  color: #9A5F2B;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-footer a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .auth-card {
+    padding: 30px 22px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Admin variant: dark "mission control" skin ----------
+ * Same layout/markup contract as the main login, distinct identity so the
+ * separated admin entry point is unmistakable. Cream text on deep sage-ink
+ * keeps contrast high (~12:1 for headings, ~7:1 for body). */
+
+.auth-container.auth-admin {
+  background:
+    radial-gradient(700px 320px at 15% 10%, rgba(219, 149, 88, 0.22) 0%, transparent 60%),
+    radial-gradient(700px 300px at 85% 15%, rgba(151, 168, 122, 0.25) 0%, transparent 55%),
+    radial-gradient(600px 300px at 50% 100%, rgba(219, 149, 88, 0.14) 0%, transparent 60%),
+    #232B1E;
+}
+
+.auth-admin .auth-card {
+  background: #2C3527;
+  border: 1px solid #57693F;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.auth-admin .auth-badge {
+  background: #DB9558;
+  color: #2A1D0E;
+  border-color: #DB9558;
+}
+
+.auth-admin .auth-header h1 {
+  color: #FCF9EA;
+}
+
+.auth-admin .auth-header h2 {
+  color: #A8BBA3;
+}
+
+.auth-admin .form-group label {
+  color: #E9EFE0;
+}
+
+.auth-admin .form-group input {
+  background: #232B1E;
+  border-color: #57693F;
+  color: #FCF9EA;
+}
+
+.auth-admin .form-group input:focus {
+  border-color: #DB9558;
+  background: #232B1E;
+  box-shadow: 0 0 0 4px rgba(219, 149, 88, 0.3);
+}
+
+.auth-admin .form-group input::placeholder {
+  color: #7C8A6E;
+}
+
+.auth-admin .auth-footer {
+  color: #A8BBA3;
+}
+
+.auth-admin .auth-footer a {
+  color: #DB9558;
+}
+
+.auth-capabilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 22px;
+}
+
+.auth-capabilities li {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #E9EFE0;
+  background: rgba(151, 168, 122, 0.16);
+  border: 1px solid #57693F;
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.auth-capabilities li:hover {
+  transform: translateY(-2px);
+  border-color: #DB9558;
+}

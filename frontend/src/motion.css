@@ -1,0 +1,405 @@
+/* Shared motion system — hovers, entrances, and micro-interactions.
+ *
+ * Intentionally CSS-only (no JSX changes): page containers fade/slide in on
+ * mount, lists stagger, cards lift on hover, buttons get a sheen sweep.
+ *
+ * Deliberate exception: the active exam-taking screen (.exam-taking-container
+ * and its children) stays calm per UI_UX_SPEC.md §1 — only instant,
+ * functional feedback (modal pop, banner slide) is allowed there, never
+ * looping or entrance choreography that could distract under time pressure.
+ */
+
+/* ---------- Keyframes ---------- */
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.94) translateY(10px); }
+  60% { opacity: 1; transform: scale(1.015) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes sheen {
+  from { transform: translateX(-130%) skewX(-18deg); }
+  to { transform: translateX(240%) skewX(-18deg); }
+}
+
+@keyframes dots {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+}
+
+@keyframes soft-ping {
+  0% { box-shadow: 0 0 0 0 rgba(219, 149, 88, 0.45); }
+  70% { box-shadow: 0 0 0 9px rgba(219, 149, 88, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(219, 149, 88, 0); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* ---------- Page + card entrances ---------- */
+
+.page,
+.my-exams-container,
+.my-results-container,
+.question-bank-container,
+.exam-builder-container,
+.grading-queue-container,
+.live-monitor-container,
+.results-report-container,
+.system-overview-container,
+.auth-card,
+.system-check-card,
+.unauthorized {
+  animation: fade-up 0.45s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+
+/* Staggered list entrances (dashboards, queues, reports — not the exam screen) */
+.exams-list > *,
+.results-list > *,
+.stat-cards > *,
+.queue-group > *,
+.summary-card li,
+.rules-list li {
+  animation: fade-up 0.4s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+
+.exams-list > *:nth-child(2),
+.results-list > *:nth-child(2),
+.stat-cards > *:nth-child(2) { animation-delay: 0.05s; }
+.exams-list > *:nth-child(3),
+.results-list > *:nth-child(3),
+.stat-cards > *:nth-child(3) { animation-delay: 0.1s; }
+.exams-list > *:nth-child(4),
+.results-list > *:nth-child(4),
+.stat-cards > *:nth-child(4) { animation-delay: 0.15s; }
+.exams-list > *:nth-child(5),
+.results-list > *:nth-child(5),
+.stat-cards > *:nth-child(5) { animation-delay: 0.2s; }
+.exams-list > *:nth-child(n+6),
+.results-list > *:nth-child(n+6),
+.stat-cards > *:nth-child(n+6) { animation-delay: 0.25s; }
+
+/* ---------- Cards: hover lift ---------- */
+
+.exam-card,
+.result-card,
+.question-item,
+.stat-card,
+.summary-card,
+.card,
+.breakdown-item,
+.event-card,
+.queue-item,
+.attempt-row {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.exam-card:hover,
+.result-card:hover,
+.stat-card:hover,
+.summary-card:hover,
+.card:hover,
+.breakdown-item:hover,
+.event-card:hover {
+  transform: translateY(-3px);
+  border-color: #E8CFA8;
+  box-shadow: 0 10px 28px rgba(154, 95, 43, 0.14);
+}
+
+.queue-item:hover,
+.attempt-row:hover {
+  transform: translateX(3px);
+  border-color: #DB9558;
+}
+
+.queue-item.active,
+.attempt-row.active {
+  animation: soft-ping 0.6s ease-out;
+}
+
+/* ---------- Buttons: lift + sheen + press ---------- */
+
+.btn-primary,
+.btn-secondary,
+.btn-add,
+.btn-remove,
+.btn-submit-exam,
+.btn-logout,
+.chip-btn,
+.btn-danger,
+.btn-delete-small {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-primary:hover:not(:disabled),
+.btn-add:hover:not(:disabled),
+.btn-submit-exam:hover:not(:disabled),
+.btn-danger:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(154, 95, 43, 0.35);
+}
+
+.btn-secondary:hover,
+.btn-logout:hover,
+.chip-btn:hover:not(.active) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(154, 95, 43, 0.16);
+}
+
+/* Sheen sweep across primary actions */
+.btn-primary::after,
+.btn-add::after,
+.btn-submit-exam::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: translateX(-130%) skewX(-18deg);
+  pointer-events: none;
+}
+
+.btn-primary:hover:not(:disabled)::after,
+.btn-add:hover:not(:disabled)::after,
+.btn-submit-exam:hover:not(:disabled)::after {
+  animation: sheen 0.7s ease;
+}
+
+.btn-primary:active:not(:disabled),
+.btn-secondary:active,
+.btn-add:active:not(:disabled),
+.btn-remove:active,
+.btn-submit-exam:active,
+.chip-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn-icon {
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.btn-icon:hover {
+  transform: scale(1.15) rotate(4deg);
+}
+
+.btn-icon:active {
+  transform: scale(0.94);
+}
+
+/* ---------- Nav + topbar ---------- */
+
+.nav-link {
+  transition: transform 0.16s ease, background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.nav-link:hover {
+  transform: translateX(4px);
+}
+
+.nav-link.active {
+  animation: fade-in 0.25s ease both;
+}
+
+.brand-mark {
+  transition: transform 0.25s ease;
+}
+
+.brand:hover .brand-mark {
+  transform: rotate(-10deg) scale(1.08);
+  animation: float-slow 2.4s ease-in-out infinite;
+}
+
+/* ---------- Chips, badges, palette ---------- */
+
+.chip,
+.flag-badge,
+.role-badge,
+.badge,
+.question-marks,
+.marks {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.chip-btn:hover:not(.active),
+.chip:hover {
+  transform: scale(1.05);
+}
+
+.palette-btn {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.step {
+  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.step.active {
+  animation: soft-ping 0.6s ease-out;
+}
+
+.step.completed {
+  transform: scale(1.05);
+}
+
+/* Options + form rows: gentle emphasis */
+.option-item,
+.option-row {
+  transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.option-item:hover {
+  transform: translateX(3px);
+  box-shadow: 0 4px 14px rgba(154, 95, 43, 0.12);
+}
+
+.filters select,
+.filters input,
+.form-group select,
+.form-group input,
+.form-group textarea,
+.grade-block input,
+.grade-block textarea,
+.queue-header select,
+.monitor-controls select,
+.report-controls select {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+}
+
+/* ---------- Tables: row hover glide ---------- */
+
+.questions-table tbody tr,
+.report-table tbody tr,
+.overview-table tbody tr {
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.questions-table tbody tr:hover,
+.report-table tbody tr:hover,
+.overview-table tbody tr:hover {
+  background-color: #FBF3E2;
+}
+
+/* ---------- Modal, banners, feedback ---------- */
+
+.modal-overlay {
+  animation: fade-in 0.2s ease both;
+}
+
+.modal-content {
+  animation: pop-in 0.28s cubic-bezier(0.22, 0.9, 0.3, 1.1) both;
+}
+
+.error-banner {
+  animation: slide-down 0.25s ease both;
+}
+
+.error-message {
+  animation: slide-down 0.25s ease both;
+}
+
+.success-indicator {
+  animation: pop-in 0.35s cubic-bezier(0.22, 0.9, 0.3, 1.1) both;
+}
+
+/* Animated ellipsis for loading states */
+.loading::after {
+  content: '';
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  animation: dots 1.2s steps(1) infinite;
+}
+
+.page-loading::after {
+  content: '';
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  animation: dots 1.2s steps(1) infinite;
+}
+
+/* Event thumbnails: zoom on hover for reviewer timeline */
+.event-thumb {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.event-thumb:hover {
+  transform: scale(1.03);
+  box-shadow: 0 8px 20px rgba(46, 42, 35, 0.2);
+}
+
+/* ---------- Focus visibility (keyboard users) ---------- */
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.nav-link:focus-visible {
+  outline: 2px solid #DB9558;
+  outline-offset: 2px;
+}
+
+/* ---------- Smooth scrolling ---------- */
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* ---------- Reduced motion: respect user preference ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- Exam-taking screen: keep it calm ----------
+ * Override any inherited liveliness inside an active attempt. The timer's
+ * critical pulse and the modal/banner feedback above are the only motion
+ * allowed here (server-authoritative timer; UI_UX_SPEC.md §1, §4.4).
+ */
+.exam-taking-container .question-area,
+.exam-taking-container .question-palette,
+.exam-taking-container .exam-content,
+.exam-taking-container .palette-grid > *,
+.exam-taking-container .options-list > *,
+.exam-taking-container .exam-top-bar,
+.exam-taking-container .exam-bottom-bar {
+  animation: none;
+}
+
+.exam-taking-container .option-item:hover {
+  transform: none;
+  box-shadow: none;
+}
