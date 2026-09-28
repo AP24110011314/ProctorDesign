@@ -1,14 +1,21 @@
-/* Minimal reset — the light theme lives in App.css */
+/* Minimal reset — the full theme lives in App.css */
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
 #root {
   width: 100%;
   min-height: 100vh;
 }
+
+img { max-width: 100%; }

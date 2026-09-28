@@ -16,6 +16,8 @@ import { SystemOverview } from './features/admin-portal/SystemOverview';
 import { AdminLogin } from './features/admin-portal/AdminLogin';
 import './App.css';
 
+const Icon = ({ children }) => <span className="nav-icon" aria-hidden="true">{children}</span>;
+
 const Topbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -25,18 +27,27 @@ const Topbar = () => {
     navigate('/login');
   };
 
+  const initial = (user?.email || user?.username || '?').charAt(0).toUpperCase();
+
   return (
     <header className="topbar">
       <div className="brand">
-        <span className="brand-mark">▣</span>
+        <span className="brand-mark" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-11Z" stroke="currentColor" strokeWidth="1.8" />
+            <path d="M8 9.5l2.2 2.2L16 6.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M8 15.5h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        </span>
         <span>
-          Exam Portal
-          <small>Online Examination &amp; Proctoring</small>
+          ProctorU
+          <small>Secure exams · Fair results</small>
         </span>
       </div>
       {user && (
         <div className="topbar-user">
           <span className={`role-badge ${user.role}`}>{user.role}</span>
+          <span className="avatar-circle" aria-hidden="true">{initial}</span>
           <span>{user.email}</span>
           <button className="btn-logout" onClick={handleLogout}>
             Logout
@@ -47,11 +58,11 @@ const Topbar = () => {
   );
 };
 
-const Shell = ({ title, links, children }) => (
+const Shell = ({ title, links, children, footNote }) => (
   <div className="app-shell">
     <Topbar />
     <div className="layout">
-      <nav className="sidenav">
+      <nav className="sidenav" aria-label={`${title} navigation`}>
         <div className="sidenav-title">{title}</div>
         {links.map((link) => (
           <NavLink
@@ -60,9 +71,10 @@ const Shell = ({ title, links, children }) => (
             end={link.end}
             className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
           >
-            <span>{link.icon}</span> {link.label}
+            <Icon>{link.icon}</Icon> {link.label}
           </NavLink>
         ))}
+        <div className="sidenav-foot">{footNote || 'Flags are for human review — the system never auto-fails an attempt.'}</div>
       </nav>
       <main className="content">{children}</main>
     </div>
@@ -72,10 +84,11 @@ const Shell = ({ title, links, children }) => (
 const StudentDashboard = () => (
   <Shell
     title="Student"
+    footNote="Camera stays on during exams. Tab switches and fullscreen exits are logged for faculty review."
     links={[
       { to: '/student', label: 'Home', icon: '⌂', end: true },
-      { to: '/student/exams', label: 'My Exams', icon: '📝' },
-      { to: '/student/results', label: 'My Results', icon: '📊' },
+      { to: '/student/exams', label: 'My Exams', icon: '✎' },
+      { to: '/student/results', label: 'My Results', icon: '◔' },
     ]}
   >
     <Routes>
@@ -83,8 +96,12 @@ const StudentDashboard = () => (
         index
         element={
           <div className="page">
-            <h1>Student Dashboard</h1>
-            <p className="page-subtitle">Your upcoming exams, attempts and results live here.</p>
+            <div className="hero-strip">
+              <div>
+                <h2>Ready when you are.</h2>
+                <p>Your upcoming exams, active attempts and published results live here. Enter via System Check when your window opens.</p>
+              </div>
+            </div>
             <MyExams />
           </div>
         }
@@ -102,11 +119,11 @@ const FacultyDashboard = () => (
     title="Faculty"
     links={[
       { to: '/faculty', label: 'Home', icon: '⌂', end: true },
-      { to: '/faculty/questions', label: 'Question Bank', icon: '📚' },
-      { to: '/faculty/exams/build', label: 'Exam Builder', icon: '🛠' },
-      { to: '/faculty/grading', label: 'Grading Queue', icon: '✍' },
-      { to: '/faculty/results', label: 'Results Report', icon: '📊' },
-      { to: '/faculty/monitor', label: 'Live Monitoring', icon: '👁' },
+      { to: '/faculty/questions', label: 'Question Bank', icon: '▤' },
+      { to: '/faculty/exams/build', label: 'Exam Builder', icon: '⚙' },
+      { to: '/faculty/grading', label: 'Grading Queue', icon: '✎' },
+      { to: '/faculty/results', label: 'Results Report', icon: '◔' },
+      { to: '/faculty/monitor', label: 'Live Monitoring', icon: '◎' },
     ]}
   >
     <Routes>
@@ -114,8 +131,23 @@ const FacultyDashboard = () => (
         index
         element={
           <div className="page">
-            <h1>Faculty Dashboard</h1>
-            <p className="page-subtitle">Build questions and exams, grade answers and monitor attempts.</p>
+            <div className="hero-strip">
+              <div>
+                <h2>Teach, assess, trust the process.</h2>
+                <p>Build questions and exams, grade answers and monitor attempts — flags surface what happened, you decide what it means.</p>
+              </div>
+              <div className="hero-actions">
+                <NavLink className="btn-primary" to="/faculty/exams/build">New exam</NavLink>
+                <NavLink className="btn-secondary" to="/faculty/monitor">Live monitor</NavLink>
+              </div>
+            </div>
+            <div className="stat-row">
+              <div className="mini-stat"><strong>Bank</strong><span>Questions by topic</span></div>
+              <div className="mini-stat"><strong>Build</strong><span>Draft → publish</span></div>
+              <div className="mini-stat"><strong>Grade</strong><span>Subjective queue</span></div>
+              <div className="mini-stat"><strong>Review</strong><span>Integrity flags</span></div>
+            </div>
+            <p className="page-subtitle">Use the sidebar to jump into a workflow. Server-side RBAC enforces every action; the UI is just navigation.</p>
           </div>
         }
       />
@@ -131,13 +163,14 @@ const FacultyDashboard = () => (
 const AdminDashboard = () => (
   <Shell
     title="Mission Control"
+    footNote="Admin actions are audited. Voiding and overrides require a reason and are logged."
     links={[
-      { to: '/admin', label: 'System Overview', icon: '⚙', end: true },
-      { to: '/admin/exams/build', label: 'Roll Out Test', icon: '🚀' },
-      { to: '/admin/questions', label: 'Question Bank', icon: '📚' },
-      { to: '/admin/monitor', label: 'Live Monitoring', icon: '👁' },
-      { to: '/admin/grading', label: 'Grading Queue', icon: '✍' },
-      { to: '/admin/results', label: 'Results & Integrity', icon: '📊' },
+      { to: '/admin', label: 'System Overview', icon: '◈', end: true },
+      { to: '/admin/exams/build', label: 'Roll Out Test', icon: '➤' },
+      { to: '/admin/questions', label: 'Question Bank', icon: '▤' },
+      { to: '/admin/monitor', label: 'Live Monitoring', icon: '◎' },
+      { to: '/admin/grading', label: 'Grading Queue', icon: '✎' },
+      { to: '/admin/results', label: 'Results & Integrity', icon: '◔' },
     ]}
   >
     <Routes>
@@ -155,8 +188,10 @@ const AdminDashboard = () => (
 );
 const Unauthorized = () => (
   <div className="unauthorized">
-    <h1>403 — Unauthorized</h1>
-    <p className="page-subtitle">You don&apos;t have permission to access this resource.</p>
+    <span className="role-badge admin">403</span>
+    <h1 style={{ margin: '0.7rem 0 0.35rem' }}>Unauthorized</h1>
+    <p className="page-subtitle" style={{ marginBottom: '1.2rem' }}>You don&apos;t have permission to access this resource. Switch to an account with the right role.</p>
+    <a className="btn-primary" href="/login">Back to login</a>
   </div>
 );
 

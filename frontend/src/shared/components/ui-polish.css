@@ -1,0 +1,282 @@
+/* UI polish layer — unifies faculty/admin/student data screens on the
+ * caramel/cream/sage tokens without touching JSX contracts.
+ * Loaded after feature CSS (see main.jsx) so these rules win. */
+
+/* ---- Containers: drop the flat #fff / #ddd look ---- */
+.question-bank-container,
+.exam-builder-container,
+.grading-queue-container,
+.live-monitor-container,
+.results-report-container,
+.system-overview-container {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.page-header h1,
+.question-bank-container h1,
+.live-monitor-container h1,
+.results-report-container h1,
+.grading-queue-container h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  letter-spacing: -0.02em;
+}
+
+/* ---- Filter bars / control rows ---- */
+.filters,
+.monitor-controls,
+.report-controls,
+.queue-header {
+  background: linear-gradient(180deg, #FFFDF6, var(--surface-soft, #FAF4E1)) !important;
+  border: 1px solid var(--border, #E7DCC2) !important;
+  border-radius: 14px !important;
+  padding: 0.85rem 1rem !important;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.06));
+}
+
+.filters select,
+.filters input,
+.monitor-controls select,
+.report-controls select,
+.queue-header select,
+.page-header select {
+  padding: 0.6rem 0.75rem !important;
+  border: 1.5px solid var(--border, #E7DCC2) !important;
+  border-radius: 10px !important;
+  background: #FFFDF4 !important;
+  font-size: 0.88rem !important;
+  color: var(--ink, #2E2A23) !important;
+}
+
+.filters select:focus,
+.filters input:focus,
+.monitor-controls select:focus,
+.report-controls select:focus {
+  outline: none !important;
+  border-color: var(--caramel, #DB9558) !important;
+  box-shadow: 0 0 0 4px rgba(219, 149, 88, 0.22) !important;
+  background: #fff !important;
+}
+
+/* ---- Cards / panes ---- */
+.question-form-card,
+.builder-form,
+.grading-pane,
+.summary-card,
+.available-questions,
+.selected-questions {
+  background: var(--surface, #FFFEF9) !important;
+  border: 1px solid var(--border, #E7DCC2) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.06)) !important;
+}
+
+.builder-form { padding: 1.6rem !important; }
+.grading-pane { padding: 1.4rem !important; }
+
+/* ---- Tables ---- */
+.questions-table,
+.table-wrap {
+  border: 1px solid var(--border, #E7DCC2) !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  background: #fff !important;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.06)) !important;
+}
+
+.questions-table table,
+.report-table,
+.overview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.questions-table th,
+.report-table th,
+.overview-table th {
+  background: linear-gradient(180deg, var(--surface-soft, #FAF4E1), #F3EAD0) !important;
+  color: var(--muted, #6F6759) !important;
+  font-size: 0.72rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  padding: 0.75rem 0.9rem !important;
+  text-align: left !important;
+  border-bottom: 1px solid var(--border, #E7DCC2) !important;
+}
+
+.questions-table td,
+.report-table td,
+.overview-table td {
+  padding: 0.8rem 0.9rem !important;
+  border-bottom: 1px solid #F1EAD3 !important;
+}
+
+.report-table th,
+.report-table td,
+.overview-table th,
+.overview-table td {
+  border: 1px solid #EFE4C8 !important;
+}
+
+.questions-table tbody tr:hover,
+.report-table tbody tr:hover,
+.overview-table tbody tr:hover {
+  background: var(--caramel-ghost, #FBF3E2) !important;
+}
+
+/* ---- Chips / badges ---- */
+.chip-btn {
+  padding: 0.42rem 0.85rem !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--border-strong, #D9C9A3) !important;
+  background: #fff !important;
+  font-size: 0.8rem !important;
+  font-weight: 650 !important;
+  cursor: pointer;
+}
+
+.chip-btn.active {
+  background: linear-gradient(180deg, #A8642F, #9A5F2B) !important;
+  color: #fff !important;
+  border-color: #9A5F2B !important;
+  box-shadow: 0 6px 14px rgba(154, 95, 43, 0.35) !important;
+}
+
+.flag-badge {
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+  border: 1px solid var(--border, #E7DCC2) !important;
+}
+
+.badge { border: 1px solid var(--caramel-border, #E8CFA8) !important; }
+
+/* ---- Attempt / queue rows ---- */
+.attempt-row,
+.queue-item {
+  border: 1px solid var(--border, #E7DCC2) !important;
+  border-radius: 12px !important;
+  background: linear-gradient(180deg, #FFFDF6, #FFF9EA) !important;
+  padding: 0.7rem 0.85rem !important;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.06));
+}
+
+.attempt-row.active,
+.queue-item.active {
+  border-color: var(--caramel, #DB9558) !important;
+  background: var(--caramel-ghost, #FBF3E2) !important;
+  box-shadow: 0 0 0 3px rgba(219, 149, 88, 0.22) !important;
+}
+
+/* ---- Event timeline cards ---- */
+.event-card {
+  border: 1px solid var(--border, #E7DCC2) !important;
+  border-left-width: 5px !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.06)) !important;
+}
+
+.event-thumb {
+  max-width: 320px;
+  border-radius: 10px !important;
+  border: 1px solid var(--border, #E7DCC2) !important;
+}
+
+/* ---- Stat cards (admin overview) ---- */
+.stat-card {
+  border: 1px solid var(--border, #E7DCC2) !important;
+  border-radius: 14px !important;
+  background: linear-gradient(180deg, #FFFDF6, #FFF9EA) !important;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.06)) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--caramel, #DB9558), var(--sage, #97A87A));
+}
+
+.stat-card.alert { border-color: #f87171 !important; }
+.stat-card.alert::after { background: linear-gradient(180deg, #ef4444, #b91c1c); }
+
+.stat-value {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* ---- Stepper (exam builder) ---- */
+.step {
+  border: 2px solid var(--border, #E7DCC2) !important;
+}
+.step.active {
+  background: linear-gradient(180deg, #A8642F, #9A5F2B) !important;
+  border-color: #9A5F2B !important;
+  box-shadow: 0 0 0 4px rgba(219, 149, 88, 0.3) !important;
+}
+.step.completed {
+  background: linear-gradient(180deg, #647A4B, #57693F) !important;
+  border-color: #57693F !important;
+}
+
+/* ---- Question pickers ---- */
+.question-item {
+  border-radius: 12px !important;
+}
+.question-item.selected {
+  border-color: var(--sage, #97A87A) !important;
+  background: var(--sage-ghost, #F1F5EA) !important;
+  box-shadow: 0 0 0 3px rgba(151, 168, 122, 0.22) !important;
+}
+
+.btn-add {
+  background: linear-gradient(180deg, #A8642F, #9A5F2B) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 12px rgba(154, 95, 43, 0.3) !important;
+}
+.btn-remove {
+  background: linear-gradient(180deg, #C92A22, #A11F18) !important;
+  border-radius: 10px !important;
+}
+
+/* ---- Review summary ---- */
+.review-summary .summary-card {
+  background: linear-gradient(180deg, #FFFDF6, var(--surface-soft, #FAF4E1)) !important;
+}
+
+/* ---- Grading suggestion ---- */
+.suggestion {
+  border-radius: 12px !important;
+  border: 1px dashed var(--caramel, #DB9558) !important;
+  background: var(--caramel-ghost, #FBF3E2) !important;
+}
+
+.grade-block.reference {
+  background: var(--sage-ghost, #F1F5EA) !important;
+  border: 1px solid var(--sage-border, #C4D1B4) !important;
+  border-radius: 12px !important;
+  padding: 0.85rem 1rem !important;
+}
+
+/* ---- Messages ---- */
+.error-message {
+  border-radius: 12px !important;
+  border-left: 4px solid #dc2626 !important;
+}
+.notice-message {
+  border-radius: 12px !important;
+  border: 1px solid var(--sage-border, #C4D1B4) !important;
+  border-left: 4px solid var(--sage-deep, #57693F) !important;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+  .monitor-layout, .queue-layout { grid-template-columns: 1fr !important; }
+}

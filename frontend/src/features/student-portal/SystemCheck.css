@@ -5,17 +5,31 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #DB9558 0%, #9A5F2B 55%, #57693F 130%);
-  padding: 20px;
+  background:
+    radial-gradient(700px 320px at 15% 10%, rgba(219,149,88,0.35) 0%, transparent 60%),
+    radial-gradient(700px 300px at 85% 15%, rgba(151,168,122,0.35) 0%, transparent 55%),
+    linear-gradient(135deg, #6B4A26 0%, #4A2E14 45%, #2F3A26 130%);
+  padding: 24px 20px;
 }
 
 .system-check-card {
-  background: white;
-  border-radius: 12px;
-  padding: 40px;
-  max-width: 700px;
+  background: #FFFEF9;
+  border: 1px solid #E7DCC2;
+  border-radius: 20px;
+  padding: 36px 34px;
+  max-width: 720px;
   width: 100%;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+.system-check-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 6px;
+  background: linear-gradient(90deg, #DB9558, #97A87A);
 }
 
 .system-check-card h1 {
@@ -59,8 +73,9 @@
 }
 
 .stepper .step.active {
-  background: #9A5F2B;
+  background: linear-gradient(180deg, #A8642F, #9A5F2B);
   color: white;
+  box-shadow: 0 6px 16px rgba(154, 95, 43, 0.4);
 }
 
 .check-step h2 {
@@ -79,9 +94,11 @@
   width: 100%;
   max-width: 640px;
   margin: 0 auto 20px;
-  background: #000;
-  border-radius: 8px;
+  background: #101510;
+  border: 1px solid #2F3A26;
+  border-radius: 14px;
   overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
 }
 
 .preview-video {
@@ -148,11 +165,12 @@
 }
 
 .rules-container {
-  background: #FFFDF4;
+  background: linear-gradient(180deg, #FFFDF6, #FAF4E1);
   border: 1px solid #E7DCC2;
-  padding: 25px;
-  border-radius: 8px;
+  padding: 22px;
+  border-radius: 14px;
   margin-bottom: 25px;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.06));
 }
 
 .rules-container h3 {

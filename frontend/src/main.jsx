@@ -2,7 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
-// Motion system last so shared hovers/entrances layer over feature styles.
+// Polish layer after App.css/feature styles so tokens win; motion last.
+import './shared/components/ui-polish.css'
 import './motion.css'
 
 createRoot(document.getElementById('root')).render(
