@@ -1,56 +1,44 @@
 # AGENTS.md — Online Examination & Proctoring System
 
-## Repo shape (monorepo, two halves)
-- `backend/` — Django 6.1 + DRF + SimpleJWT. Apps map 1:1 to architecture: `authentication/`, `exams/`, `proctoring/`, `grading/`. Project package is `config/` (`settings.py`, `urls.py`, `celery.py`).
-- `frontend/` — React 19 + Vite 8 + react-router v7 + axios. `src/features/` per portal (`auth/`, `student-portal/`, `faculty-portal/`, `admin-portal/`, `proctoring/`); `src/shared/` holds `api-client/`, `components/`, `hooks/`. (README says React 18 — stale; `package.json` is truth: React 19.)
-- Phase 0 scaffolding only: health endpoint works, most portals are placeholders in `src/App.jsx`. Build phases sequentially per README (Auth → Question bank → Exam-taking → Randomization → Proctoring → Grading → Admin).
+## Repo shape
+- Monorepo, two halves. `backend/` = Django 6.1 + DRF + SimpleJWT, apps `authentication/ exams/ proctoring/ grading/ system/`, project package `config/` (`settings.py`, `urls.py`, `celery.py`). `frontend/` = React 19 + Vite 8 + react-router v7 + axios (`src/features/` per portal, `src/shared/api-client|components|hooks`).
+- Status: Phases 1–7 complete (auth/RBAC, question bank, exam-taking, randomization, proctoring, grading + export, admin), 93 backend tests passing. Don't treat portals as placeholders.
+- Source-of-truth hierarchy: owner instruction > `SRS.md` (FR-*/NFR-*) > `ARCHITECTURE.md` (boundaries) > `PRD.md` (intent; §6.2 out-of-scope binding) > `AI_RULES.md` (process only). Never edit those four docs as a side effect — propose separately.
 
-## Source-of-truth hierarchy (from `AI_RULES.md` — follow it)
-1. Explicit owner instruction in current conversation
-2. `SRS.md` (exact requirements, FR-*/NFR-* IDs)
-3. `ARCHITECTURE.md` (module boundaries)
-4. `PRD.md` (intent; §6.2 out-of-scope is binding)
-5. `AI_RULES.md` (process/style only, never overrides what to build)
-
-Never edit `SRS.md`, `PRD.md`, `ARCHITECTURE.md`, or `AI_RULES.md` as a side effect of a code change — propose doc edits separately.
-
-## Commands (verify before substituting)
+## Commands
 ```bash
-# Backend (from backend/, venv already exists at backend/venv but is gitignored)
-source venv/bin/activate
+# Backend — always run with backend/ as cwd so .env loads via load_dotenv()
+source venv/bin/activate  # backend/venv exists, gitignored
 python manage.py migrate
 python manage.py runserver        # :8000
-python manage.py test             # only real test suite; run per-app as `python manage.py test <app>`
+python manage.py test <app>       # per-app: authentication exams proctoring grading system; full = `python manage.py test`
 curl http://localhost:8000/api/health/
 
 # Frontend (from frontend/)
-npm install
-npm run dev     # :5173, proxies /api -> :8000 (see vite.config.js)
-npm run build   # vite build
-npm run lint    # oxlint (NOT eslint; config in .oxlintrc.json)
+npm run dev    # :5173, proxies /api -> :8000 (vite.config.js)
+npm run lint   # oxlint (NOT eslint; config .oxlintrc.json)
+npm run build  # vite build
 ```
-- No frontend test runner is installed — README's `npm test` is aspirational, don't run it.
-- No CI workflows / pre-commit / task runner exist. No root `opencode.json`.
-- Env: `cp .env.example .env` in each half. Backend defaults to SQLite (`DB_ENGINE=sqlite3`); set `DB_ENGINE=postgresql` + creds for prod. Frontend uses `VITE_API_BASE_URL` (defaults to `http://localhost:8000/api` in `apiClient.js`).
-- Celery/Redis (auto-submit sweep, retention cleanup) is optional for dev, required for prod: `redis-server`, then `celery -A config worker -l info` and `celery -A config beat -l info` from `backend/`. Beat runs `exams.tasks.auto_submit_expired_attempts` every 60s.
+- No frontend test runner — never run `npm test`. No CI / pre-commit / root `opencode.json`.
+- Env: `cp .env.example .env` in each half. Backend `DB_ENGINE=sqlite3` default (dev); `postgresql` + creds for prod. Frontend `VITE_API_BASE_URL` (default `http://localhost:8000/api`).
+- Celery/Redis optional dev, required prod: `redis-server`, then from `backend/` → `celery -A config worker -l info` + `celery -A config beat -l info`. Beat runs `exams.tasks.auto_submit_expired_attempts` every 60s.
 
-## Hard constraints (do not "simplify" these away)
-- **RBAC default-deny:** every new endpoint needs an explicit `@require_role(...)` check (`authentication/permissions.py`). Global DRF default is `IsAuthenticated`; superusers bypass role checks. Frontend `ProtectedRoute` hiding is UX only — enforce server-side.
-- **Never leak answers:** strip `is_correct` from all student-facing serializers (ARCHITECTURE.md §8, NFR-6).
-- **Server-authoritative timer:** client countdown is display-only; expiry enforced by Celery auto-submit sweep (NFR-14). Never replace with client-only timer.
-- **Deterministic randomization:** question/option order seeded by `(student_id, exam_id)` (FR-10). Flag any change to seeding logic explicitly.
-- **Proctoring privacy:** client-side detection (face-api.js/MediaPipe) sends flag events + compressed thumbnails only. Never store/transmit continuous video (NFR-10/11). Server OpenCV is for one-time reference-photo match + offline reprocessing only.
-- **Flags, not auto-fail:** violations create `ProctoringEvent`s for human review; never auto-disqualify.
-- **Out of scope** (PRD §6.2, needs explicit owner approval): gaze-tracking, deepfake/liveness beyond basic photo match, audio transcription, native mobile apps, billing, live human video-call proctoring.
-- **Tech lock:** Django + React(Vite) + PostgreSQL + self-hosted JWT. No new major dependency (DB, queue, framework, auth SaaS) without flagging it and updating `ARCHITECTURE.md` in the same change. SQLite OK for local dev only.
-- **Error envelope + pagination:** errors as `{ "error": { "code": "...", "message": "..." } }`; list endpoints paginate (`?page=&page_size=`, default size 20). API versioning intent is `/api/v1/` but current routes are unversioned `/api/...` — don't rename existing routes casually.
-- **Secrets/env:** everything from env vars (`config/settings.py` via `load_dotenv()` — run Django commands with `backend/` as cwd so `.env` loads). Never hardcode/commit secrets. Seed data must use fake addresses (`student1@example.edu`).
+## Hard constraints (never simplify away)
+- **RBAC default-deny:** every endpoint needs explicit `@require_role(...)` (`authentication/permissions.py`). DRF default `IsAuthenticated`; superusers bypass. `ProtectedRoute` is UX only — enforce server-side.
+- **Never leak answers:** strip `is_correct` / correct ids / `model_answer` from all student serializers (NFR-6). Result detail hides scores until `exam.results_published = true`.
+- **Server-authoritative timer:** client countdown display-only; expiry via Celery sweep (NFR-14).
+- **Deterministic randomization:** order seeded by `(student_id, exam_id)` (FR-10) — flag any seeding change.
+- **Proctoring privacy + flags-not-fail:** browser sends flag events + compressed thumbnails only (≤ `PROCTORING_SNAPSHOT_MAX_SIZE_MB`=2MB), never continuous video (NFR-10/11). Events endpoint throttled 60/min. Violations → `ProctoringEvent` for human review; never auto-disqualify. Server OpenCV = one-time reference-photo match / offline reprocessing only.
+- **Out of scope** (PRD §6.2, needs owner approval): gaze-tracking, deepfake/liveness beyond basic photo match, audio transcription, native mobile, billing, live video-call proctoring.
+- **Tech lock:** Django + React(Vite) + PostgreSQL + self-hosted JWT. No new major dep without flagging + updating `ARCHITECTURE.md` in same change.
+- **Envelope + pagination:** errors `{ "error": { "code": "...", "message": "..." } }`; lists `?page=&page_size=` (default 20). Routes unversioned `/api/...` — don't rename toward `/api/v1/` casually.
 
-## Conventions that differ from defaults
-- Custom user model: `AUTH_USER_MODEL = 'authentication.User'` with `role` field (`student|faculty|admin`); use `is_student()/is_faculty()/is_admin()` helpers.
-- JWT: `Bearer` header, access 60min / refresh 7d (env-tunable), `ROTATE_REFRESH_TOKENS` + blacklist. Frontend stores `access_token`/`refresh_token` in `localStorage` and auto-refreshes on 401 (`shared/api-client/apiClient.js`) — reuse that client, don't hand-roll axios calls.
-- Routes: `config/urls.py` mounts `api/health/`, `api/auth/` (register/login/logout/token/refresh/profile), `api/` (exams). `proctoring`/`grading` URL includes are still commented out — uncomment as those phases land.
-- Proctoring frontend: each sensor is an isolated hook funneling through a single `flagEmitter` (ARCHITECTURE.md §4) — keep detection swappable, don't couple it to exam-taking UI.
-- Results gate: students can't see scores until `exam.results_published = true`.
-- Docs hygiene: any new env var/script/setup step must update `README.md` in the same change; new grading/randomization/integrity logic ships with unit tests (NFR-17) plus a manual note for role-access + proctoring flags. One logical concern per change — don't bundle refactors with features.
-- Gitignored (never commit): `backend/venv/`, `backend/.env`, `backend/db.sqlite3`, `backend/media/`, `frontend/node_modules/`, `frontend/.env*`.
+## Gotchas agents actually hit
+- Auth quirks: `POST /api/auth/register/` requires `password_confirm` + `role`; `POST /api/auth/login/` takes **email** + password (not username). JWT access 60min / refresh 7d, `ROTATE_REFRESH_TOKENS` + blacklist.
+- Reuse `shared/api-client/apiClient.js` — never hand-roll axios. Its refresh is single-flight on purpose: parallel 401 refreshes would blacklist each other.
+- Export quirk: `GET /api/grading/exams/{id}/export/?filetype=csv|pdf` — **`?filetype=`**, not `?format=` (DRF hijacks `?format=` and 404s).
+- Attempt flow: `POST /api/attempts/start/` → SystemCheck → `POST /api/attempts/{id}/submit/`; `POST .../void/` needs mandatory reason and is terminal (excluded from grading queue/results); `POST .../events/` throttled; `POST .../reference_photo/`.
+- Grading rules: MCQ exact set-match = full `marks_per_question` else 0 minus negative marking if enabled (blank = 0); short answers never auto-graded. `AI_ASSIST_GRADING_ENABLED` = suggestions only, never auto-applied.
+- URLs live in `config/urls.py`: `api/health/`, `api/auth/`, `api/` (exams), `api/grading/`, `api/proctoring/`, `api/system/` — all mounted, none commented out.
+- Proctoring frontend: isolated sensor hooks → single `flagEmitter`; keep detection swappable, don't couple to exam-taking UI.
+- Conventions: custom user `authentication.User` with `role` (`student|faculty|admin`); new env var/script/setup step must update `README.md` in same change; new grading/randomization/integrity logic ships with backend unit tests (NFR-17) + manual role-access note; one concern per change; seed data uses `@example.edu`. Never commit `backend/venv|/.env|/db.sqlite3|/media/`, `frontend/node_modules|/.env*`.

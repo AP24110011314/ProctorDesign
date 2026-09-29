@@ -1,8 +1,12 @@
 # Online Examination & Proctoring System
 
-A web-based examination platform with automated proctoring, built as a final-year B.Tech project.
-Faculty create timed, randomized exams; students take them in a monitored browser environment;
+![Student Dashboard](docs/assets/student-dashboard.png)
+
+A web-based examination platform with automated proctoring, built as a final-year B.Tech project. 
+Faculty create timed, randomized exams; students take them in a monitored browser environment; 
 proctoring flags suspicious behavior for **human review only** — the system never auto-fails a student.
+
+![Mission Control](docs/assets/mission-control.png)
 
 ## Quick Start (5 minutes)
 
