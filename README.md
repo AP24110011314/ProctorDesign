@@ -1,12 +1,50 @@
 # ProctoX
-
-![Student Dashboard](docs/assets/student-dashboard.png)
-
 A web-based examination platform with automated proctoring, built as a final-year B.Tech project. 
 Faculty create timed, randomized exams; students take them in a monitored browser environment; 
 proctoring flags suspicious behavior for **human review only** — the system never auto-fails a student.
 
-![Mission Control](docs/assets/mission-control.png)
+## 🖥️ Platform Interfaces
+
+### 🎯 Mission Controller
+
+The Mission Controller provides faculty with centralized control over examinations, monitoring, and proctoring activities.
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="screenshots/c1.png" width="100%" alt="Mission Controller Dashboard"/>
+      <br>
+      <b>Mission Controller — Dashboard</b>
+    </td>
+    <td align="center" width="50%">
+      <img src="screenshots/c2.png" width="100%" alt="Mission Controller Interface"/>
+      <br>
+      <b>Mission Controller — Exam Monitoring</b>
+    </td>
+  </tr>
+</table>
+
+---
+
+### 🎓 Student Dashboard
+
+The Student Dashboard provides students with a secure and monitored environment to access and attempt their examinations.
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="screenshots/s1.png" width="100%" alt="Student Dashboard"/>
+      <br>
+      <b>Student Dashboard — Home</b>
+    </td>
+    <td align="center" width="50%">
+      <img src="screenshots/s2.png" width="100%" alt="Student Examination Interface"/>
+      <br>
+      <b>Student Dashboard — Examination</b>
+    </td>
+  </tr>
+</table>
+
 
 ## Quick Start (5 minutes)
 
