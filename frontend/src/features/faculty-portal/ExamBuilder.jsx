@@ -14,6 +14,7 @@ export const ExamBuilder = ({ examId = null }) => {
   const [selectedQuestions, setSelectedQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const [formData, setFormData] = useState({
     course: '',
@@ -154,7 +155,8 @@ export const ExamBuilder = ({ examId = null }) => {
         }
       }
 
-      window.alert(publish ? 'Exam created and published!' : 'Exam saved as draft.');
+      setSuccess(publish ? 'Exam successfully created and published!' : 'Exam safely saved as draft.');
+      // Optional: reset step or redirect
     } catch (err) {
       const data = err.response?.data;
       if (data?.error?.message) {
@@ -187,6 +189,7 @@ export const ExamBuilder = ({ examId = null }) => {
       </div>
 
       {error && <div className="error-message">{error}</div>}
+      {success && <div className="notice-message" style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#16a34a', borderColor: 'rgba(34, 197, 94, 0.2)', marginBottom: '1.5rem' }}>{success}</div>}
 
       <form onSubmit={handleSubmit} className="builder-form">
         {/* Step 1: Basic Info */}

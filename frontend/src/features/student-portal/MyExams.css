@@ -52,15 +52,16 @@
   top: 0;
   bottom: 0;
   width: 5px;
-  background: linear-gradient(180deg, #6366f1, #a855f7);
+  background: linear-gradient(180deg, #DB9558, #E8CFA8);
   opacity: 0.8;
   transition: width 0.2s ease, opacity 0.2s ease;
 }
 
 .exam-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
-  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 12px 30px rgba(154, 95, 43, 0.12);
+  background: linear-gradient(180deg, #FFFEF9 0%, #FAF4E1 100%);
+  border-color: #DB9558;
 }
 
 .exam-card:hover::before {

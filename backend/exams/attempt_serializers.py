@@ -55,6 +55,7 @@ class AttemptSerializer(serializers.ModelSerializer):
     """
     exam_title = serializers.CharField(source='exam.title', read_only=True)
     student_username = serializers.CharField(source='student.username', read_only=True)
+    student_name = serializers.CharField(source='student.get_full_name', read_only=True)
     remaining_time_seconds = serializers.IntegerField(read_only=True)
     questions = AttemptQuestionSerializer(source='attempt_questions', many=True, read_only=True)
     answers = serializers.SerializerMethodField()
@@ -62,7 +63,7 @@ class AttemptSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attempt
         fields = [
-            'id', 'exam', 'exam_title', 'student', 'student_username',
+            'id', 'exam', 'exam_title', 'student', 'student_username', 'student_name',
             'started_at', 'end_time', 'submitted_at',
             'status', 'remaining_time_seconds', 'score', 'integrity_score',
             'questions', 'answers'

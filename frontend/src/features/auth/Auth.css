@@ -287,15 +287,19 @@
  * separated admin entry point is unmistakable. Cream text on deep sage-ink
  * keeps contrast high (~12:1 for headings, ~7:1 for body). */
 
-/* ---------- Admin variant: Premium "Mission Control" Custom Palette ---------- */
+/* ---------- Admin variant: Premium "Mission Control" Theme (Matched to Student Portal) ---------- */
 
 .auth-container.auth-admin {
-  background: radial-gradient(circle at 10% 20%, #FCF2E5 0%, #F5E8D6 100%);
+  background:
+    radial-gradient(760px 340px at 12% 8%, #F3E3C6 0%, transparent 60%),
+    radial-gradient(760px 320px at 88% 12%, #DDE5CC 0%, transparent 55%),
+    radial-gradient(640px 320px at 50% 102%, #F0D9B5 0%, transparent 60%),
+    #FCF9EA;
   position: relative;
   overflow: hidden;
 }
 
-/* Animated glass shapes (Custom Palette) */
+/* Animated glass shapes (Matched theme) */
 .admin-bg-shape {
   position: absolute;
   filter: blur(80px);
@@ -305,7 +309,7 @@
 }
 
 .shape-1 {
-  background: rgba(236, 91, 56, 0.25);
+  background: rgba(219, 149, 88, 0.25);
   width: 400px;
   height: 400px;
   top: -100px;
@@ -313,7 +317,7 @@
 }
 
 .shape-2 {
-  background: rgba(168, 164, 146, 0.4);
+  background: rgba(168, 187, 163, 0.3);
   width: 500px;
   height: 500px;
   bottom: -200px;
@@ -322,7 +326,7 @@
 }
 
 .shape-3 {
-  background: rgba(82, 70, 70, 0.15);
+  background: rgba(243, 227, 198, 0.6);
   width: 300px;
   height: 300px;
   top: 40%;
@@ -337,11 +341,11 @@
 }
 
 .auth-admin .premium-glass {
-  background: rgba(252, 242, 229, 0.65);
+  background: rgba(255, 254, 249, 0.85);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 30px 60px rgba(82, 70, 70, 0.12), inset 0 1px 0 rgba(255, 255, 255, 1);
+  border: 1px solid rgba(231, 220, 194, 0.8);
+  box-shadow: 0 20px 50px rgba(154, 95, 43, 0.16), inset 0 1px 0 rgba(255, 255, 255, 1);
   position: relative;
   z-index: 1;
   padding: 24px 32px;
@@ -360,14 +364,14 @@
 .auth-admin .admin-icon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, rgba(236, 91, 56, 0.15), rgba(236, 91, 56, 0.02));
-  border: 1px solid rgba(236, 91, 56, 0.4);
+  background: linear-gradient(135deg, rgba(219, 149, 88, 0.15), rgba(219, 149, 88, 0.02));
+  border: 1px solid rgba(219, 149, 88, 0.4);
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #EC5B38;
-  box-shadow: 0 8px 24px rgba(236, 91, 56, 0.2);
+  color: #C47A3A;
+  box-shadow: 0 8px 24px rgba(219, 149, 88, 0.2);
 }
 
 .auth-admin .admin-icon svg {
@@ -376,10 +380,10 @@
 }
 
 .auth-admin .glow-badge {
-  background: rgba(255, 255, 255, 0.5);
-  color: #EC5B38;
-  border-color: rgba(236, 91, 56, 0.4);
-  box-shadow: 0 0 15px rgba(236, 91, 56, 0.2);
+  background: #F6E8D2;
+  color: #4A2E14;
+  border-color: #E8CFA8;
+  box-shadow: 0 0 15px rgba(219, 149, 88, 0.1);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   margin-bottom: 0;
@@ -401,9 +405,9 @@
 .auth-admin .premium-caps li {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #524646;
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(168, 164, 146, 0.6);
+  color: #6F6759;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(231, 220, 194, 0.8);
   border-radius: 999px;
   padding: 0.4rem 0.85rem;
   display: flex;
@@ -414,31 +418,31 @@
 }
 
 .auth-admin .premium-caps li:hover {
-  background: rgba(236, 91, 56, 0.08);
-  border-color: rgba(236, 91, 56, 0.4);
-  color: #EC5B38;
+  background: rgba(219, 149, 88, 0.08);
+  border-color: rgba(219, 149, 88, 0.4);
+  color: #B46522;
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(236, 91, 56, 0.15);
+  box-shadow: 0 4px 8px rgba(219, 149, 88, 0.15);
 }
 
 .cap-dot {
   width: 6px;
   height: 6px;
-  background: #A8A492;
+  background: #A8BBA3;
   border-radius: 50%;
   display: inline-block;
   transition: background 0.2s ease;
 }
 
 .auth-admin .premium-caps li:hover .cap-dot {
-  background: #EC5B38;
-  box-shadow: 0 0 8px rgba(236, 91, 56, 0.6);
+  background: #DB9558;
+  box-shadow: 0 0 8px rgba(219, 149, 88, 0.6);
 }
 
 .auth-admin .glass-error {
-  background: rgba(236, 91, 56, 0.1);
-  border-color: rgba(236, 91, 56, 0.3);
-  color: #EC5B38;
+  background: rgba(254, 242, 242, 0.9);
+  border-color: rgba(254, 202, 202, 1);
+  color: #991B1B;
   backdrop-filter: blur(10px);
 }
 
@@ -447,7 +451,7 @@
 }
 
 .auth-admin .premium-input-wrapper label {
-  color: #524646;
+  color: #2E2A23;
   font-size: 0.8rem;
   font-weight: 600;
   margin-bottom: 0.35rem;
@@ -463,7 +467,7 @@
 .auth-admin .input-icon {
   position: absolute;
   left: 0.85rem;
-  color: #A8A492;
+  color: #8C8273;
   pointer-events: none;
   transition: color 0.2s ease;
   width: 18px;
@@ -472,11 +476,11 @@
 
 .auth-admin .input-with-icon input {
   width: 100%;
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(168, 164, 146, 0.6);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(231, 220, 194, 0.8);
   border-radius: 10px;
   padding: 0.7rem 1rem 0.7rem 2.6rem;
-  color: #524646;
+  color: #2E2A23;
   font-size: 0.9rem;
   transition: all 0.2s ease;
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
@@ -484,28 +488,28 @@
 
 .auth-admin .input-with-icon input:focus {
   background: #FFFFFF;
-  border-color: #EC5B38;
-  box-shadow: 0 0 0 3px rgba(236, 91, 56, 0.2), inset 0 0 0 1px #EC5B38;
+  border-color: #DB9558;
+  box-shadow: 0 0 0 3px rgba(219, 149, 88, 0.2), inset 0 0 0 1px #DB9558;
   outline: none;
 }
 
 .auth-admin .input-with-icon input:focus + .input-icon,
 .auth-admin .input-with-icon input:not(:placeholder-shown) + .input-icon {
-  color: #EC5B38;
+  color: #DB9558;
 }
 
 .auth-admin .input-with-icon input::placeholder {
-  color: rgba(82, 70, 70, 0.5);
+  color: rgba(111, 103, 89, 0.6);
 }
 
 .auth-admin .btn-premium {
-  background: linear-gradient(180deg, #EC5B38 0%, #D44E2E 100%);
-  border: 1px solid #D44E2E;
+  background: linear-gradient(180deg, #2E2A23 0%, #1A1713 100%);
+  border: 1px solid #1A1713;
   border-bottom-width: 2px;
-  box-shadow: 0 4px 12px rgba(236, 91, 56, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.25);
-  color: #FCF2E5;
+  box-shadow: 0 4px 12px rgba(46, 42, 35, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  color: #FCF9EA;
   font-weight: 700;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
   border-radius: 10px;
   padding: 0.75rem;
   margin-top: 0.75rem;
@@ -514,9 +518,9 @@
 }
 
 .auth-admin .btn-premium:hover:not(:disabled) {
-  background: linear-gradient(180deg, #F06A49 0%, #EC5B38 100%);
+  background: linear-gradient(180deg, #3E3930 0%, #2E2A23 100%);
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(236, 91, 56, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 6px 16px rgba(46, 42, 35, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.15);
 }
 
 .auth-admin .premium-footer {

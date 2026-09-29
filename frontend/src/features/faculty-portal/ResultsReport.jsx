@@ -178,7 +178,10 @@ export const ResultsReport = () => {
             ) : (
               attempts.map((a) => (
                 <tr key={a.id}>
-                  <td>{a.student_username || `ID ${a.student}`}</td>
+                  <td>
+                    <div style={{ fontWeight: 600 }}>{a.student_name || 'Student'}</div>
+                    <div style={{ fontSize: '0.85em', color: '#6F6759' }}>{a.student_username || `ID ${a.student}`}</div>
+                  </td>
                   <td>{a.status}</td>
                   <td>{a.score ?? '—'}</td>
                   <td>{a.integrity_score ?? '—'}</td>
