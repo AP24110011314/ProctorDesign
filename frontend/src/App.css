@@ -1,17 +1,8 @@
-/* Caramel + Cream + Sage design system for the Online Examination & Proctoring System
- *
- * Palette (owner-supplied):
- *   --caramel:    #DB9558  primary accent / brand
- *   --cream:      #FCF9EA  page background tint
- *   --sage:       #97A87A  secondary / success
- *   --sage-pale:  #A8BBA3  soft fills / borders
- *
- * Accessibility notes:
- * - #DB9558 with white text is ~3:1 contrast, so interactive fills that carry
- *   white text use --primary-deep (#9A5F2B, ~4.6:1). Raw caramel is reserved
- *   for accents, glows, brand marks, and large display type paired with dark ink.
- * - Red/amber are reserved strictly for danger/warning/timer/flags
- *   (UI_UX_SPEC.md §7) and are NOT replaced by the palette.
+/* New Custom Theme Palette: 
+ *   --cream:      #F5EFE3 (Base background)
+ *   --olive:      #4F5B2A (Dark/Ink/Primary text)
+ *   --gold:       #B8892D (Accents, active states)
+ *   --khaki:      #D8C9A8 (Borders, secondary backgrounds)
  */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap');
@@ -24,34 +15,36 @@
   color: var(--ink);
 
   /* ---- Palette ---- */
-  --caramel: #DB9558;
-  --caramel-deep: #9A5F2B;
-  --caramel-hover: #864F22;
-  --caramel-ink: #4A2E14;
-  --caramel-soft: #F6E8D2;
-  --caramel-ghost: #FBF3E2;
-  --caramel-border: #E8CFA8;
-  --cream: #FCF9EA;
-  --sage: #97A87A;
-  --sage-deep: #57693F;
-  --sage-ink: #2F3A26;
-  --sage-pale: #A8BBA3;
-  --sage-soft: #E9EFE0;
-  --sage-ghost: #F1F5EA;
-  --sage-border: #C4D1B4;
+  --caramel: #B8892D;
+  --caramel-deep: #8E681C;
+  --caramel-hover: #A07422;
+  --caramel-ink: #4F5B2A;
+  --caramel-soft: #EFE4CC;
+  --caramel-ghost: #F7EFE1;
+  --caramel-border: #D8C9A8;
+  
+  --cream: #F5EFE3;
+  
+  --sage: #D8C9A8;
+  --sage-deep: #4F5B2A;
+  --sage-ink: #2E3816;
+  --sage-pale: #C5B694;
+  --sage-soft: #E8E2D2;
+  --sage-ghost: #F1EFE8;
+  --sage-border: #D8C9A8;
 
   /* ---- Semantic tokens ---- */
   --bg: var(--cream);
-  --surface: #FFFEF9;
-  --surface-soft: #FAF4E1;
+  --surface: #FCFAf6;
+  --surface-soft: #F1ECD9;
   --surface-raised: #FFFFFF;
-  --ink: #2E2A23;
-  --ink-soft: #4A4438;
-  --muted: #6F6759;
-  --faint: #9A917F;
-  --border: #E7DCC2;
-  --border-strong: #D9C9A3;
-  --primary: var(--caramel-deep);
+  --ink: #2E3816;
+  --ink-soft: #4F5B2A;
+  --muted: #727A59;
+  --faint: #9A9E88;
+  --border: #D8C9A8;
+  --border-strong: #C2B392;
+  --primary: var(--caramel);
   --primary-hover: var(--caramel-hover);
   --primary-soft: var(--caramel-soft);
   --secondary: var(--sage-deep);
@@ -70,11 +63,11 @@
   --warn-soft: #FEF3C7;
   --radius: 14px;
   --radius-lg: 20px;
-  --shadow-sm: 0 1px 2px rgba(74, 46, 20, 0.08);
-  --shadow-md: 0 8px 24px rgba(154, 95, 43, 0.12);
-  --shadow-lg: 0 20px 50px rgba(154, 95, 43, 0.16);
-  --shadow-pop: 0 12px 32px rgba(46, 42, 35, 0.14);
-  --ring: 0 0 0 4px rgba(219, 149, 88, 0.22);
+  --shadow-sm: 0 1px 2px rgba(79, 91, 42, 0.08);
+  --shadow-md: 0 8px 24px rgba(79, 91, 42, 0.12);
+  --shadow-lg: 0 20px 50px rgba(79, 91, 42, 0.16);
+  --shadow-pop: 0 12px 32px rgba(46, 56, 22, 0.14);
+  --ring: 0 0 0 4px rgba(184, 137, 45, 0.22);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -94,9 +87,9 @@ body {
   min-height: 100vh;
   color: var(--ink);
   background:
-    radial-gradient(1000px 340px at 8% -6%, #F3E3C6 0%, transparent 60%),
-    radial-gradient(900px 320px at 96% -2%, #DDE5CC 0%, transparent 55%),
-    radial-gradient(760px 340px at 50% 112%, #F0D9B5 0%, transparent 60%),
+    radial-gradient(1000px 340px at 8% -6%, rgba(216, 201, 168, 0.6) 0%, transparent 60%),
+    radial-gradient(900px 320px at 96% -2%, rgba(184, 137, 45, 0.15) 0%, transparent 55%),
+    radial-gradient(760px 340px at 50% 112%, rgba(216, 201, 168, 0.4) 0%, transparent 60%),
     var(--cream);
   background-attachment: fixed;
 }
