@@ -88,72 +88,84 @@ export const MyResults = () => {
             const exam = examsById[attempt.exam];
             const resultsPublished = exam?.results_published === true;
             return (
-              <div key={attempt.id} className="result-card">
-                <div className="result-info">
-                  <h3>{attempt.exam_title || `Exam ${attempt.exam}`}</h3>
-                  {resultsPublished && attempt.score != null ? (
-                    <span className="chip published">Score: {attempt.score}</span>
-                  ) : (
-                    <span className="chip pending">
-                      {resultsPublished ? 'Grading in progress' : 'Result pending'}
-                    </span>
-                  )}
+              <div key={attempt.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div className="result-card">
+                  <div className="result-info">
+                    <h3>{attempt.exam_title || `Exam ${attempt.exam}`}</h3>
+                    {resultsPublished && attempt.score != null ? (
+                      <span className="chip published">Score: {attempt.score}</span>
+                    ) : (
+                      <span className="chip pending">
+                        {resultsPublished ? 'Grading in progress' : 'Result pending'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="result-actions">
+                    {resultsPublished ? (
+                      <button
+                        type="button"
+                        onClick={() => detail && detail.attempt_id === attempt.id ? setDetail(null) : openBreakdown(attempt)}
+                        className="btn-secondary"
+                      >
+                        {detail && detail.attempt_id === attempt.id ? 'Hide Breakdown' : 'View Breakdown'}
+                      </button>
+                    ) : (
+                      <span className="hint">Results not yet released by faculty</span>
+                    )}
+                  </div>
                 </div>
-                {resultsPublished ? (
-                  <button
-                    type="button"
-                    onClick={() => openBreakdown(attempt)}
-                    className="btn-secondary"
-                  >
-                    View Breakdown
-                  </button>
-                ) : (
-                  <span className="hint">Results not yet released by faculty</span>
-                )}
-              </div>
+              
+              {/* Inline Breakdown Rendering */}
+              {detailLoading && detail === null && (
+                <div className="loading" style={{ padding: '1rem', minHeight: 'auto' }}>Loading breakdown...</div>
+              )}
+              {detailError && detail === null && (
+                <div className="error-message" style={{ margin: '1rem 0' }}>{detailError}</div>
+              )}
+
+              {detail && detail.attempt_id === attempt.id && (
+                <div className="breakdown">
+                  <h2>
+                    {detail.exam_title} — Score: {detail.score} / {detail.max_score}
+                  </h2>
+                  {detail.items.map((item) => (
+                    <div key={item.question_id} className="breakdown-item">
+                      <p className="question">{item.question_text}</p>
+                      {item.question_type.startsWith('mcq') ? (
+                        <p>
+                          Your answer: {item.selected_options.join(', ') || <em>(blank)</em>}{' '}
+                          {item.is_correct == null ? (
+                            <span className="chip pending">Pending</span>
+                          ) : item.is_correct ? (
+                            <span className="chip correct">Correct</span>
+                          ) : (
+                            <span className="chip wrong">Incorrect</span>
+                          )}
+                        </p>
+                      ) : (
+                        <p className="text-answer">{item.text_answer || <em>(blank)</em>}</p>
+                      )}
+                      <p className="marks">
+                        Marks: {item.marks_awarded ?? '—'} / {item.max_marks}
+                      </p>
+                      {item.grading_feedback && (
+                        <p className="feedback">Feedback: {item.grading_feedback}</p>
+                      )}
+                    </div>
+                  ))}
+                  <div className="result-actions" style={{ marginTop: '1rem' }}>
+                    <button type="button" onClick={() => setDetail(null)} className="btn-secondary">
+                      Close breakdown
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
             );
           })}
         </div>
       )}
 
-      {detailLoading && <div className="loading">Loading breakdown...</div>}
-      {detailError && <div className="error-message">{detailError}</div>}
-
-      {detail && (
-        <div className="breakdown">
-          <h2>
-            {detail.exam_title} — Score: {detail.score} / {detail.max_score}
-          </h2>
-          {detail.items.map((item) => (
-            <div key={item.question_id} className="breakdown-item">
-              <p className="question">{item.question_text}</p>
-              {item.question_type.startsWith('mcq') ? (
-                <p>
-                  Your answer: {item.selected_options.join(', ') || <em>(blank)</em>}{' '}
-                  {item.is_correct == null ? (
-                    <span className="chip pending">Pending</span>
-                  ) : item.is_correct ? (
-                    <span className="chip correct">Correct</span>
-                  ) : (
-                    <span className="chip wrong">Incorrect</span>
-                  )}
-                </p>
-              ) : (
-                <p className="text-answer">{item.text_answer || <em>(blank)</em>}</p>
-              )}
-              <p className="marks">
-                Marks: {item.marks_awarded ?? '—'} / {item.max_marks}
-              </p>
-              {item.grading_feedback && (
-                <p className="feedback">Feedback: {item.grading_feedback}</p>
-              )}
-            </div>
-          ))}
-          <button type="button" onClick={() => setDetail(null)} className="btn-secondary">
-            Close breakdown
-          </button>
-        </div>
-      )}
     </div>
   );
 };

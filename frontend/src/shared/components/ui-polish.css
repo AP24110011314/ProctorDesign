@@ -41,12 +41,26 @@
 .report-controls select,
 .queue-header select,
 .page-header select {
-  padding: 0.6rem 0.75rem !important;
+  padding: 0.6rem 2.25rem 0.6rem 0.75rem !important;
   border: 1.5px solid var(--border, #E7DCC2) !important;
   border-radius: 10px !important;
   background: #FFFDF4 !important;
   font-size: 0.88rem !important;
   color: var(--ink, #2E2A23) !important;
+}
+
+/* Custom Dropdown Arrow */
+.filters select,
+.monitor-controls select,
+.report-controls select,
+.queue-header select,
+.page-header select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%238C8273' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.85rem center !important;
+  background-size: 10px !important;
 }
 
 .filters select:focus,

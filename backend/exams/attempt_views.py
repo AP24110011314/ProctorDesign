@@ -303,7 +303,7 @@ class AttemptViewSet(viewsets.ModelViewSet):
         """
         attempt = self.get_object()
 
-        if attempt.student != request.user:
+        if attempt.student != request.user and not (request.user.is_superuser or request.user.role in (User.Role.ADMIN, User.Role.FACULTY)):
             return Response(
                 {'error': {'code': 'forbidden', 'message': 'Not your attempt'}},
                 status=status.HTTP_403_FORBIDDEN,

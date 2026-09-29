@@ -20,20 +20,29 @@ export const SystemCheck = () => {
   const streamRef = useRef(null);
 
   useEffect(() => {
-    if (step === 1) {
-      startCamera();
+    if (step === 1 || step === 2) {
+      if (!streamRef.current) {
+        startCamera();
+      } else if (videoRef.current && videoRef.current.srcObject !== streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+      }
+    } else {
+      stopCamera();
     }
+  }, [step]);
 
+  useEffect(() => {
+    // Cleanup on unmount
     return () => {
       stopCamera();
     };
-  }, [step]);
+  }, []);
 
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 640, height: 480 },
-        audio: false,
+        audio: true,
       });
 
       if (videoRef.current) {
