@@ -50,10 +50,10 @@ def login_view(request):
     password = serializer.validated_data['password']
 
     # Authenticate by email (not username)
-    try:
-        user = User.objects.get(email=email)
-        user = authenticate(request, username=user.username, password=password)
-    except User.DoesNotExist:
+    user_obj = User.objects.filter(email=email).first()
+    if user_obj is not None:
+        user = authenticate(request, username=user_obj.username, password=password)
+    else:
         user = None
 
     if user is None:

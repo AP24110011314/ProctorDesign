@@ -41,6 +41,12 @@ class RegisterSerializer(serializers.ModelSerializer):
             'last_name': {'required': True},
         }
 
+    def validate_email(self, value):
+        """Reject duplicate emails (email is the login identifier)."""
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("A user with this email already exists.")
+        return value
+
     def validate(self, attrs):
         """Validate password confirmation matches"""
         if attrs['password'] != attrs['password_confirm']:

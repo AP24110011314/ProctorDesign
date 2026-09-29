@@ -5,6 +5,7 @@ import { Login } from './features/auth/Login';
 import { Register } from './features/auth/Register';
 import { QuestionBank } from './features/faculty-portal/QuestionBank';
 import { ExamBuilder } from './features/faculty-portal/ExamBuilder';
+import { ExamManagement } from './features/faculty-portal/ExamManagement';
 import { GradingQueue } from './features/faculty-portal/GradingQueue';
 import { ResultsReport } from './features/faculty-portal/ResultsReport';
 import { LiveMonitor } from './features/faculty-portal/LiveMonitor';
@@ -120,6 +121,7 @@ const FacultyDashboard = () => (
     links={[
       { to: '/faculty', label: 'Home', icon: '⌂', end: true },
       { to: '/faculty/questions', label: 'Question Bank', icon: '▤' },
+      { to: '/faculty/exams', label: 'Manage Exams', icon: '⊞' },
       { to: '/faculty/exams/build', label: 'Exam Builder', icon: '⚙' },
       { to: '/faculty/grading', label: 'Grading Queue', icon: '✎' },
       { to: '/faculty/results', label: 'Results Report', icon: '◔' },
@@ -152,6 +154,7 @@ const FacultyDashboard = () => (
         }
       />
       <Route path="questions" element={<QuestionBank />} />
+      <Route path="exams" element={<ExamManagement />} />
       <Route path="exams/build" element={<ExamBuilder />} />
       <Route path="grading" element={<GradingQueue />} />
       <Route path="results" element={<ResultsReport />} />
@@ -166,6 +169,7 @@ const AdminDashboard = () => (
     footNote="Admin actions are audited. Voiding and overrides require a reason and are logged."
     links={[
       { to: '/admin', label: 'System Overview', icon: '◈', end: true },
+      { to: '/admin/exams', label: 'Manage Exams', icon: '⊞' },
       { to: '/admin/exams/build', label: 'Roll Out Test', icon: '➤' },
       { to: '/admin/questions', label: 'Question Bank', icon: '▤' },
       { to: '/admin/monitor', label: 'Live Monitoring', icon: '◎' },
@@ -178,6 +182,7 @@ const AdminDashboard = () => (
       <Route path="overview" element={<SystemOverview />} />
       {/* Admins reuse the faculty workflows server-side RBAC already allows
           FACULTY + ADMIN on all exam/grading/proctoring endpoints. */}
+      <Route path="exams" element={<ExamManagement />} />
       <Route path="exams/build" element={<ExamBuilder />} />
       <Route path="questions" element={<QuestionBank />} />
       <Route path="monitor" element={<LiveMonitor />} />

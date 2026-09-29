@@ -102,7 +102,20 @@ export const ExamBuilder = ({ examId = null }) => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  /**
+   * Ensure datetime-local values include seconds and timezone so Django
+   * DateTimeField can parse them without relying on input format config.
+   */
+  const normaliseDateTime = (dt) => {
+    if (!dt) return dt;
+    // datetime-local gives "YYYY-MM-DDTHH:MM"; append :00 if no seconds
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dt)) {
+      return `${dt}:00`;
+    }
+    return dt;
+  };
+
+  const handleSubmit = async (e, publish = true) => {
     e.preventDefault();
     setError('');
 
@@ -114,11 +127,16 @@ export const ExamBuilder = ({ examId = null }) => {
     try {
       const payload = {
         ...formData,
+        start_time: normaliseDateTime(formData.start_time),
+        end_time: normaliseDateTime(formData.end_time),
         question_count: selectedQuestions.length,
       };
 
       if (examId) {
         await examService.updateExam(examId, payload);
+        if (publish) {
+          await examService.publishExam(examId);
+        }
       } else {
         const exam = await examService.createExam(payload);
 
@@ -129,11 +147,14 @@ export const ExamBuilder = ({ examId = null }) => {
             selectedQuestions.map((q) => q.id)
           );
         }
+
+        // Publish the exam so students can see it (FR-12)
+        if (publish) {
+          await examService.publishExam(exam.id);
+        }
       }
 
-      // Navigate to exams list or show success
-      window.alert('Exam created successfully!');
-      // TODO: Navigate to exams list
+      window.alert(publish ? 'Exam created and published!' : 'Exam saved as draft.');
     } catch (err) {
       const data = err.response?.data;
       if (data?.error?.message) {
@@ -454,9 +475,18 @@ export const ExamBuilder = ({ examId = null }) => {
               Next →
             </button>
           ) : (
-            <button type="submit" className="btn-primary">
-              {examId ? 'Update Exam' : 'Create & Publish Exam'}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={(e) => handleSubmit(e, false)}
+                className="btn-secondary"
+              >
+                Save as Draft
+              </button>
+              <button type="submit" className="btn-primary">
+                {examId ? 'Update & Publish' : 'Create & Publish'}
+              </button>
+            </>
           )}
         </div>
       </form>

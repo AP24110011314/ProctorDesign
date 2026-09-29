@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { resultService } from '../../shared/api-client/gradingService';
+import { examService } from '../../shared/api-client/examService';
 import './MyResults.css';
 
 /**
@@ -7,9 +8,14 @@ import './MyResults.css';
  * List of past exams with score (only when published — enforced server-side
  * by FR-28) plus a per-question breakdown view. Unpublished results show a
  * neutral "Result pending" status, never raw scores or flag details.
+ *
+ * We fetch the exam list to know which exams have results_published=true so
+ * we can disable the breakdown button proactively instead of letting students
+ * click and get a confusing 403.
  */
 export const MyResults = () => {
   const [attempts, setAttempts] = useState([]);
+  const [examsById, setExamsById] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [detail, setDetail] = useState(null);
@@ -17,19 +23,31 @@ export const MyResults = () => {
   const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
-    loadAttempts();
+    loadData();
   }, []);
 
-  const loadAttempts = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const data = await resultService.getAttempts();
-      const list = data.results || data;
+      const [attemptsData, examsData] = await Promise.all([
+        resultService.getAttempts(),
+        examService.getExams(),
+      ]);
+
+      const list = attemptsData.results || attemptsData;
       // Past attempts only: submitted or auto-submitted
       const past = (Array.isArray(list) ? list : []).filter((a) =>
         ['submitted', 'auto_submitted'].includes(a.status)
       );
       setAttempts(past);
+
+      // Build exam lookup for results_published status
+      const examList = examsData.results || examsData;
+      const lookup = {};
+      (Array.isArray(examList) ? examList : []).forEach((e) => {
+        lookup[e.id] = e;
+      });
+      setExamsById(lookup);
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Failed to load results');
     } finally {
@@ -66,27 +84,35 @@ export const MyResults = () => {
         <p className="empty">No completed exams yet.</p>
       ) : (
         <div className="results-list">
-          {attempts.map((attempt) => (
-            <div key={attempt.id} className="result-card">
-              <div className="result-info">
-                <h3>{attempt.exam_title || `Exam ${attempt.exam}`}</h3>
-                <span
-                  className={`chip ${attempt.score != null ? 'published' : 'pending'}`}
-                >
-                  {attempt.score != null
-                    ? `Score: ${attempt.score}`
-                    : 'Result pending'}
-                </span>
+          {attempts.map((attempt) => {
+            const exam = examsById[attempt.exam];
+            const resultsPublished = exam?.results_published === true;
+            return (
+              <div key={attempt.id} className="result-card">
+                <div className="result-info">
+                  <h3>{attempt.exam_title || `Exam ${attempt.exam}`}</h3>
+                  {resultsPublished && attempt.score != null ? (
+                    <span className="chip published">Score: {attempt.score}</span>
+                  ) : (
+                    <span className="chip pending">
+                      {resultsPublished ? 'Grading in progress' : 'Result pending'}
+                    </span>
+                  )}
+                </div>
+                {resultsPublished ? (
+                  <button
+                    type="button"
+                    onClick={() => openBreakdown(attempt)}
+                    className="btn-secondary"
+                  >
+                    View Breakdown
+                  </button>
+                ) : (
+                  <span className="hint">Results not yet released by faculty</span>
+                )}
               </div>
-              <button
-                type="button"
-                onClick={() => openBreakdown(attempt)}
-                className="btn-secondary"
-              >
-                View Breakdown
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

@@ -1,0 +1,108 @@
+.exam-management-container {
+  padding: 0.5rem 0;
+}
+
+.mgmt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.mgmt-header h1 {
+  margin: 0;
+}
+
+.exam-mgmt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.exam-mgmt-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--surface, #1a1a2e);
+  border: 1px solid var(--border, rgba(255 255 255 / 0.08));
+  border-radius: 12px;
+  transition: border-color 0.2s;
+}
+
+.exam-mgmt-card:hover {
+  border-color: var(--accent, rgba(255 255 255 / 0.18));
+}
+
+.exam-mgmt-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.exam-mgmt-info h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.chip.results-out {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+}
+
+.chip.results-hidden {
+  background: rgba(250, 204, 21, 0.12);
+  color: #fbbf24;
+}
+
+.chip.chip-live {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  animation: pulse-live 2s infinite;
+}
+
+.chip.chip-upcoming {
+  background: rgba(96, 165, 250, 0.15);
+  color: #60a5fa;
+}
+
+.chip.chip-ended {
+  background: rgba(156, 163, 175, 0.15);
+  color: #9ca3af;
+}
+
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.exam-mgmt-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.exam-mgmt-actions button {
+  font-size: 0.82rem;
+  padding: 0.35rem 0.85rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .exam-mgmt-card {
+    flex-direction: column;
+  }
+  .exam-mgmt-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}

@@ -84,7 +84,7 @@ export const MyExams = () => {
                         ? 'In progress'
                         : attemptStatus === 'voided'
                           ? 'Voided'
-                          : attempt?.score != null
+                          : exam.results_published && attempt?.score != null
                             ? `Score: ${attempt.score}`
                             : 'Result pending'}
                     </span>
