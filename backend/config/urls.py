@@ -14,7 +14,7 @@ def health_check(request):
     """Health check endpoint to verify backend is running (Phase 0)"""
     return JsonResponse({
         'status': 'healthy',
-        'service': 'Online Examination & Proctoring System - Backend',
+        'service': 'ProctoX - Backend',
         'version': '1.0.0'
     })
 

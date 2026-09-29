@@ -47,7 +47,7 @@ export const Login = () => {
     <div className="auth-container">
       <div className="auth-split">
         <div className="auth-panel" aria-hidden="true">
-          <span className="auth-badge">ProctorU · Secure exams</span>
+          <span className="auth-badge">ProctoX · Secure exams</span>
           <h2>Calm exams.<br />Clear integrity.</h2>
           <p>Server-timed attempts, deterministic shuffling and human-reviewed flags — no auto-fails, no surveillance theatre.</p>
           <ul className="auth-points">

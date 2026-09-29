@@ -109,7 +109,7 @@ export const AdminLogin = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                placeholder="commander@proctor.edu"
+                placeholder="commander@proctox.edu"
                 autoComplete="email"
                 disabled={loading}
               />

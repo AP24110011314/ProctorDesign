@@ -1,4 +1,4 @@
-# Online Examination & Proctoring System
+# ProctoX
 
 ![Student Dashboard](docs/assets/student-dashboard.png)
 

@@ -41,7 +41,7 @@ const Topbar = () => {
           </svg>
         </span>
         <span>
-          ProctorU
+          ProctoX
           <small>Secure exams · Fair results</small>
         </span>
       </div>
