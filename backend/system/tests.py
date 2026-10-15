@@ -98,6 +98,62 @@ class VoidAttemptTests(TestCase):
         self.assertEqual(response.data['results'], [])
 
 
+class SweepEndpointTests(TestCase):
+    """CRON-gated sweep: wrong/missing secret → 403, correct → sweep runs."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.student = User.objects.create_user(
+            username='stu', email='stu@example.edu', password='x', role='student')
+        self.faculty = User.objects.create_user(
+            username='fac', email='fac@example.edu', password='x', role='faculty')
+        self.course = Course.objects.create(code='C', name='N', faculty=self.faculty)
+        now = timezone.now()
+        self.exam = Exam.objects.create(
+            course=self.course, title='E',
+            start_time=now - timedelta(hours=1), end_time=now + timedelta(hours=2),
+            duration_minutes=120, question_count=1, marks_per_question=1.0,
+            is_published=True, created_by=self.faculty)
+        self.url = '/api/system/sweep/auto-submit/'
+        self.secret = 'test-cron-secret'
+
+    def _expired_attempt(self):
+        return Attempt.objects.create(
+            exam=self.exam, student=self.student,
+            end_time=timezone.now() - timedelta(minutes=1))
+
+    def test_missing_secret_forbidden(self):
+        from django.test import override_settings
+        with override_settings(CRON_SECRET=self.secret):
+            response = self.client.post(self.url, {})
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_wrong_secret_forbidden(self):
+        from django.test import override_settings
+        with override_settings(CRON_SECRET=self.secret):
+            response = self.client.post(
+                self.url, {}, HTTP_X_CRON_SECRET='nope')
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_unconfigured_secret_locked(self):
+        from django.test import override_settings
+        with override_settings(CRON_SECRET=''):
+            response = self.client.post(
+                self.url, {}, HTTP_X_CRON_SECRET='anything')
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_correct_secret_runs_sweep(self):
+        from django.test import override_settings
+        attempt = self._expired_attempt()
+        with override_settings(CRON_SECRET=self.secret):
+            response = self.client.post(
+                self.url, {}, HTTP_X_CRON_SECRET=self.secret)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(response.data['auto_submitted'], 1)
+        attempt.refresh_from_db()
+        self.assertEqual(attempt.status, Attempt.Status.AUTO_SUBMITTED)
+
+
 class OverviewAndAuditTests(TestCase):
     """SRS.md FR-30: admin-only system snapshot + audit trail."""
 
