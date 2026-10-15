@@ -1,7 +1,10 @@
+import hmac
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
 from rest_framework import serializers, viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -42,6 +45,59 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
     @require_role(User.Role.ADMIN)
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
+
+
+class AutoSubmitSweepView(APIView):
+    """Cron sweep without Celery (free-tier production).
+
+    POST /api/system/sweep/auto-submit/ — called every minute by a free
+    external pinger (e.g. cron-job.org). Auth is the shared CRON_SECRET
+    (header ``X-CRON-SECRET`` or ``?secret=``), not JWT, so no login session
+    is needed. This is the one intentional exception to the default-deny
+    @require_role rule: the secret *is* the gate, and an unset CRON_SECRET
+    locks the endpoint (403) rather than opening it.
+
+    Runs exams/auto_submit.py — the same code as Celery beat + lazy checks.
+    """
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def _provided_secret(self, request):
+        header = request.headers.get('X-CRON-SECRET', '')
+        if header:
+            return header
+        query = request.query_params.get('secret', '')
+        if query:
+            return query
+        try:
+            body = request.data.get('secret', '') if isinstance(request.data, dict) else ''
+        except Exception:
+            body = ''
+        return body or ''
+
+    def post(self, request):
+        expected = getattr(settings, 'CRON_SECRET', '') or ''
+        if not expected:
+            return Response(
+                {'error': {'code': 'sweep_disabled',
+                           'message': 'Auto-submit sweep is not configured'}},
+                status=403,
+            )
+        if not hmac.compare_digest(str(self._provided_secret(request)), str(expected)):
+            return Response(
+                {'error': {'code': 'forbidden',
+                           'message': 'Invalid sweep secret'}},
+                status=403,
+            )
+        from exams.auto_submit import sweep_expired_attempts
+
+        count = sweep_expired_attempts()
+        return Response({'auto_submitted': count})
+
+    def get(self, request):
+        # Pingers that only support GET should use POST; fail closed.
+        return self.post(request)
 
 
 class OverviewView(APIView):
