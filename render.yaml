@@ -5,6 +5,7 @@ services:
   - type: web
     name: proctox-backend
     runtime: python
+    region: oregon # must match database region below — Render rejects cross-region links
     rootDir: backend
     buildCommand: >-
       pip install -r requirements.txt &&
@@ -49,6 +50,7 @@ services:
 
 databases:
   - name: proctox-db
+    region: oregon # must match proctox-backend region above — keep them identical
     databaseName: proctox
     user: proctox
     plan: free
