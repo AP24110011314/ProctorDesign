@@ -31,6 +31,8 @@ const formatDateTime = (value) => {
   return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString();
 };
 
+const facultyDisplay = (f) => `${f.display_name} (${f.email})`;
+
 export const CourseManagement = () => {
   const [courses, setCourses] = useState([]);
   const [facultyOptions, setFacultyOptions] = useState([]);
@@ -45,6 +47,7 @@ export const CourseManagement = () => {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
+  const [facultyQuery, setFacultyQuery] = useState('');
   const [formErrors, setFormErrors] = useState({});
   const [saving, setSaving] = useState(false);
 
@@ -77,6 +80,24 @@ export const CourseManagement = () => {
     if (showForm && codeInputRef.current) codeInputRef.current.focus();
   }, [showForm]);
 
+  // Fill in the faculty search text once the options arrive (e.g. editing a
+  // course whose assignee wasn't in the list when the modal opened).
+  useEffect(() => {
+    if (editing && editing.faculty && !facultyQuery) {
+      const match = facultyOptions.find((f) => f.id === editing.faculty);
+      if (match) {
+        setFacultyQuery(facultyDisplay(match));
+      } else if (editing.faculty_name) {
+        setFacultyQuery(
+          editing.faculty_email
+            ? `${editing.faculty_name} (${editing.faculty_email})`
+            : editing.faculty_name
+        );
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [facultyOptions]);
+
   const loadCourses = async () => {
     try {
       setLoading(true);
@@ -101,6 +122,7 @@ export const CourseManagement = () => {
   const openCreate = () => {
     setEditing(null);
     setFormData(emptyForm);
+    setFacultyQuery('');
     setFormErrors({});
     setShowForm(true);
   };
@@ -114,6 +136,16 @@ export const CourseManagement = () => {
       faculty: course.faculty ?? '',
       is_active: course.is_active,
     });
+    const known = facultyOptions.find((f) => f.id === course.faculty);
+    setFacultyQuery(
+      known
+        ? facultyDisplay(known)
+        : course.faculty
+          ? course.faculty_email
+            ? `${course.faculty_name || ''} (${course.faculty_email})`.trim()
+            : course.faculty_name || ''
+          : ''
+    );
     setFormErrors({});
     setShowForm(true);
   };
@@ -131,11 +163,40 @@ export const CourseManagement = () => {
     if (formErrors[name]) setFormErrors({ ...formErrors, [name]: '' });
   };
 
+  const matchFaculty = (text) => {
+    const query = (text || '').trim().toLowerCase();
+    if (!query) return null;
+    return (
+      facultyOptions.find((f) => facultyDisplay(f).toLowerCase() === query) ||
+      null
+    );
+  };
+
+  const handleFacultyQueryChange = (e) => {
+    const value = e.target.value;
+    setFacultyQuery(value);
+    const match = matchFaculty(value);
+    setFormData({
+      ...formData,
+      faculty: value.trim() === '' ? '' : match ? match.id : formData.faculty,
+    });
+    if (formErrors.faculty) setFormErrors({ ...formErrors, faculty: '' });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errors = {};
     if (!formData.code.trim()) errors.code = 'Course code is required.';
     if (!formData.name.trim()) errors.name = 'Course name is required.';
+    let facultyId = null;
+    if (facultyQuery.trim() !== '') {
+      const match = matchFaculty(facultyQuery);
+      if (!match) {
+        errors.faculty = 'Select a faculty from the list, or clear the field for unassigned.';
+      } else {
+        facultyId = match.id;
+      }
+    }
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
@@ -147,7 +208,7 @@ export const CourseManagement = () => {
         code: formData.code.trim(),
         name: formData.name.trim(),
         description: formData.description.trim(),
-        faculty: formData.faculty === '' ? null : formData.faculty,
+        faculty: facultyId,
         is_active: formData.is_active,
       };
       if (editing) {
@@ -406,21 +467,28 @@ export const CourseManagement = () => {
 
               <div className="form-group">
                 <label htmlFor="course-faculty">Assigned faculty</label>
-                <select
+                <input
                   id="course-faculty"
-                  name="faculty"
-                  value={formData.faculty}
-                  onChange={handleFormChange}
+                  name="facultyQuery"
+                  type="text"
+                  list="course-faculty-list"
+                  value={facultyQuery}
+                  onChange={handleFacultyQueryChange}
+                  placeholder="Type a name to search... (blank = unassigned)"
+                  autoComplete="off"
                   aria-invalid={Boolean(formErrors.faculty)}
-                  aria-describedby={formErrors.faculty ? 'course-faculty-error' : undefined}
-                >
-                  <option value="">Unassigned</option>
+                  aria-describedby={
+                    formErrors.faculty ? 'course-faculty-error' : 'course-faculty-hint'
+                  }
+                />
+                <datalist id="course-faculty-list">
                   {facultyOptions.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.display_name} ({f.email})
-                    </option>
+                    <option key={f.id} value={facultyDisplay(f)} />
                   ))}
-                </select>
+                </datalist>
+                <p className="field-hint" id="course-faculty-hint">
+                  Active faculty only. Leave blank for unassigned.
+                </p>
                 {formErrors.faculty && (
                   <p className="field-error" id="course-faculty-error" role="alert">
                     {formErrors.faculty}

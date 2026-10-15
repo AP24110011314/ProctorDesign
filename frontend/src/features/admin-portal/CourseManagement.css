@@ -156,6 +156,12 @@
   margin-top: 0.3rem;
 }
 
+.field-hint {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-top: 0.3rem;
+}
+
 .course-mgmt .confirm-text {
   font-size: 0.92rem;
   color: var(--ink-soft);
