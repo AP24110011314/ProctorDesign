@@ -14,6 +14,10 @@ class AuditLog(models.Model):
         RESULTS_PUBLISH = 'results.publish', 'Results Published'
         RESULTS_UNPUBLISH = 'results.unpublish', 'Results Unpublished'
         FLAG_REVIEW = 'flag.review', 'Flag Reviewed'
+        COURSE_CREATE = 'course.create', 'Course Created'
+        COURSE_UPDATE = 'course.update', 'Course Updated'
+        COURSE_DEACTIVATE = 'course.deactivate', 'Course Deactivated'
+        COURSE_REACTIVATE = 'course.reactivate', 'Course Reactivated'
 
     actor = models.ForeignKey(
         settings.AUTH_USER_MODEL,

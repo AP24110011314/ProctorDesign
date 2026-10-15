@@ -27,10 +27,12 @@ class CourseViewSet(viewsets.ModelViewSet):
         if user.is_admin() or user.is_superuser:
             return Course.objects.all()
         elif user.is_faculty():
-            return Course.objects.filter(faculty=user)
+            # Only active own courses are selectable for new exams/questions;
+            # old exams/attempts/results keep working via their own endpoints.
+            return Course.objects.filter(faculty=user, is_active=True)
         else:
-            # Students see all courses (for exam enrollment context)
-            return Course.objects.all()
+            # Students see active courses (for exam enrollment context)
+            return Course.objects.filter(is_active=True)
 
     @require_role(User.Role.FACULTY, User.Role.ADMIN)
     def create(self, request, *args, **kwargs):

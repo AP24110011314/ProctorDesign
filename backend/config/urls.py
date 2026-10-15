@@ -23,6 +23,7 @@ urlpatterns = [
     path('api/health/', health_check, name='health_check'),
     # App URLs
     path('api/auth/', include('authentication.urls')),
+    path('api/admin/', include('exams.admin_urls')),
     path('api/', include('exams.urls')),
     path('api/grading/', include('grading.urls')),
     path('api/proctoring/', include('proctoring.urls')),

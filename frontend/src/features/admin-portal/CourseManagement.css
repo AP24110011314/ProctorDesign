@@ -1,0 +1,178 @@
+/* Course Management (admin) — reuses global tokens/buttons/table/modal
+   from App.css plus the exam modal pattern from ExamTaking.css. */
+
+.course-mgmt {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.course-mgmt .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.course-mgmt .page-header h1 {
+  font-size: 1.65rem;
+  margin-bottom: 0.35rem;
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 700;
+}
+
+.course-mgmt .page-header .btn-primary {
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.course-mgmt .filters {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 0.8rem;
+  margin-bottom: 1.25rem;
+  padding: 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.course-mgmt .filters input,
+.course-mgmt .filters select {
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  background: #fff;
+  color: var(--ink);
+}
+
+.course-mgmt .filters input:focus,
+.course-mgmt .filters select:focus {
+  outline: none;
+  border-color: var(--caramel);
+  box-shadow: var(--ring);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.24rem 0.72rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.status-active {
+  background: var(--sage-soft);
+  color: var(--sage-ink);
+  border-color: var(--sage-border);
+}
+
+.status-inactive {
+  background: #f3f4f6;
+  color: #4b5563;
+  border-color: #d1d5db;
+}
+
+.row-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-small {
+  padding: 0.45rem 0.85rem !important;
+  font-size: 0.82rem !important;
+  border-radius: 10px !important;
+}
+
+.course-mgmt .modal-content .form-group {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.course-mgmt .modal-content .form-group label {
+  display: block;
+  font-weight: 650;
+  font-size: 0.86rem;
+  margin-bottom: 0.35rem;
+  color: var(--ink);
+}
+
+.course-mgmt .modal-content .form-group input[type='text'],
+.course-mgmt .modal-content .form-group select,
+.course-mgmt .modal-content .form-group textarea {
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  background: #fff;
+  color: var(--ink);
+}
+
+.course-mgmt .modal-content .form-group input:focus,
+.course-mgmt .modal-content .form-group select:focus,
+.course-mgmt .modal-content .form-group textarea:focus {
+  outline: none;
+  border-color: var(--caramel);
+  box-shadow: var(--ring);
+}
+
+.course-mgmt .modal-content .form-group textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.course-mgmt .form-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.course-mgmt .form-check input[type='checkbox'] {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-top: 0.15rem;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+}
+
+.course-mgmt .form-check label {
+  font-weight: 500 !important;
+  font-size: 0.86rem !important;
+  color: var(--ink-soft) !important;
+}
+
+.field-error {
+  color: var(--danger);
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-top: 0.3rem;
+}
+
+.course-mgmt .confirm-text {
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+  margin-bottom: 1.25rem;
+  line-height: 1.55;
+}
+
+.course-mgmt .empty-state p {
+  margin: 0.4rem 0 1rem;
+}
+
+@media (max-width: 768px) {
+  .course-mgmt .page-header {
+    flex-direction: column;
+  }
+
+  .course-mgmt .filters {
+    grid-template-columns: 1fr;
+  }
+}

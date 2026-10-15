@@ -19,6 +19,10 @@ class Course(models.Model):
         related_name='courses',
         limit_choices_to={'role': 'faculty'}
     )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Deactivated courses stay referenced by old exams/attempts/results but cannot be selected for new exams or questions"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -81,8 +81,19 @@ class QuestionSerializer(serializers.ModelSerializer):
 
         return instance
 
+    def _validate_active_course(self, data):
+        course = data.get('course')
+        if course is None and self.instance is not None and 'course' not in data:
+            return
+        target = course if course is not None else getattr(self.instance, 'course', None)
+        if target is not None and not target.is_active:
+            raise serializers.ValidationError(
+                {'course': 'This course is deactivated and cannot accept new questions.'}
+            )
+
     def validate(self, data):
         """Validate that MCQ questions have options with at least one correct answer"""
+        self._validate_active_course(data)
         question_type = data.get('type', self.instance.type if self.instance else None)
         options = data.get('options', [])
 
@@ -140,6 +151,16 @@ class ExamSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Validate exam configuration"""
+        course = data.get('course')
+        if course is None and self.instance is not None and 'course' not in data:
+            pass
+        else:
+            target = course if course is not None else getattr(self.instance, 'course', None)
+            if target is not None and not target.is_active:
+                raise serializers.ValidationError(
+                    {'course': 'This course is deactivated and cannot accept new exams.'}
+                )
+
         start_time = data.get('start_time')
         end_time = data.get('end_time')
 

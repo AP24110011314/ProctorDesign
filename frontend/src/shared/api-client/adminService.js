@@ -23,4 +23,35 @@ export const adminService = {
     const response = await apiClient.post(`/attempts/${attemptId}/void/`, { reason });
     return response.data;
   },
+
+  // -- Admin course management (create/edit/deactivate, never delete) --
+  listCourses: async (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.q) params.append('q', filters.q);
+    if (filters.is_active) params.append('is_active', filters.is_active);
+    if (filters.page) params.append('page', filters.page);
+    const query = params.toString();
+    const response = await apiClient.get(`/admin/courses/${query ? `?${query}` : ''}`);
+    return response.data;
+  },
+
+  getCourse: async (id) => {
+    const response = await apiClient.get(`/admin/courses/${id}/`);
+    return response.data;
+  },
+
+  createCourse: async (courseData) => {
+    const response = await apiClient.post('/admin/courses/', courseData);
+    return response.data;
+  },
+
+  updateCourse: async (id, courseData) => {
+    const response = await apiClient.patch(`/admin/courses/${id}/`, courseData);
+    return response.data;
+  },
+
+  getFacultyOptions: async () => {
+    const response = await apiClient.get('/admin/faculty/');
+    return response.data;
+  },
 };
