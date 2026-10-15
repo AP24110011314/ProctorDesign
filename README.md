@@ -88,6 +88,8 @@ Open http://localhost:5173, register as a student, and log in.
 | `SECRET_KEY` / `.env` errors | Make sure you run Django commands with `backend/` as the working directory so `.env` loads |
 
 Redis/Celery (auto-submit sweep) is optional for local dev — see "Optional: background workers" below.
+Production (Render free tier) runs with **no worker**: the deadline is enforced lazily on every
+attempt request plus a secret-gated sweep pinger — see `DEPLOYMENT.md`.
 
 ## Project Structure
 
@@ -167,20 +169,35 @@ source venv/bin/activate && celery -A config beat -l info
 
 ## Environment Variables
 
-Backend (`backend/.env`, see `.env.example`) — everything comes from env, never hardcoded:
+Backend (`backend/.env`, see `.env.example`) — everything comes from env, never hardcoded.
+New deployment vars in this change: `DATABASE_URL` (Render Postgres, wins over `DB_*`
+when set), `CSRF_TRUSTED_ORIGINS`, `CELERY_ENABLED` (`False` in production — no worker),
+`CRON_SECRET` (locks `POST /api/system/sweep/auto-submit/`), `CLOUDINARY_CLOUD_NAME` /
+`CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` (ephemeral-disk uploads), and
+`DJANGO_SUPERUSER_EMAIL` / `DJANGO_SUPERUSER_PASSWORD` (read by
+`python manage.py ensure_admin`, idempotent). Production hardening (`DEBUG=False`):
+WhiteNoise static files, `SECURE_SSL_REDIRECT` + proxy header, secure cookies, modest HSTS.
 
 | Var | Default | Purpose |
 | --- | ------- | ------- |
-| `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS` | — | Django core |
-| `DB_ENGINE` | `sqlite3` | `sqlite3` for dev; `postgresql` + `DB_NAME/USER/PASSWORD/HOST/PORT` for prod |
+| `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS` | — | Django core (Render hostname auto-accepted) |
+| `DATABASE_URL` | — (unset) | Production Postgres (Render injects; overrides `DB_*`) |
+| `DB_ENGINE` | `sqlite3` | `sqlite3` for dev; `postgresql` + `DB_NAME/USER/PASSWORD/HOST/PORT` fallback |
 | `JWT_ACCESS_TOKEN_LIFETIME_MINUTES` / `JWT_REFRESH_TOKEN_LIFETIME_DAYS` | `60` / `7` | JWT lifetimes |
-| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,…` | Frontend origin |
-| `CELERY_BROKER_URL` / `CELERY_RESULT_BACKEND` | `redis://localhost:6379/0` | Workers |
+| `CORS_ALLOWED_ORIGINS` / `CSRF_TRUSTED_ORIGINS` | `http://localhost:5173,…` / — | Frontend origin(s), no trailing slash |
+| `CELERY_ENABLED` | `True` dev / `False` prod | Whether a Redis worker is expected |
+| `CELERY_BROKER_URL` / `CELERY_RESULT_BACKEND` | `redis://localhost:6379/0` | Workers (local only) |
+| `CRON_SECRET` | — (locked) | Pinger secret for the auto-submit sweep endpoint |
+| `CLOUDINARY_*` | — (local disk) | Production media storage (ephemeral disk otherwise) |
+| `DJANGO_SUPERUSER_*` | — | First admin bootstrap via `ensure_admin` |
 | `PROCTORING_SNAPSHOT_MAX_SIZE_MB` | `2` | Rejects oversized evidence uploads |
 | `PROCTORING_DATA_RETENTION_DAYS` | `90` | Retention-cleanup window (NFR-11) |
 | `AI_ASSIST_GRADING_ENABLED` | `False` | Stretch goal: keyword-overlap *suggestions* only, never auto-applied |
 
-Frontend (`frontend/.env`): `VITE_API_BASE_URL` (defaults to `http://localhost:8000/api`).
+Frontend (`frontend/.env`): `VITE_API_BASE_URL` (defaults to `http://localhost:8000/api`;
+production = `https://<render-service>.onrender.com/api`). Face-detection weights, when added,
+live under `frontend/public/models/` and load via relative `models/...` paths (see
+`public/models/README.md`) — none bundled yet by design.
 
 ## API Overview
 
@@ -208,8 +225,9 @@ override and 404s before the view runs.
    `ProtectedRoute` in React is UX only. Verified live: unauthenticated → 401 everywhere,
    student → 200 on own exams/profile, 403 on grading export and system overview.
 2. **Never leak answers** — student serializers strip `is_correct` / correct option ids / `model_answer` (NFR-6).
-3. **Server-authoritative timer** — client countdown is display-only; Celery beat force-submits expired
-   attempts every 60 s (NFR-14).
+3. **Server-authoritative timer** — client countdown is display-only; expired attempts are
+   force-submitted server-side (NFR-14): Celery beat every 60 s locally, and in production
+   (no worker) lazily on every attempt touch + a minutely secret-gated sweep pinger.
 4. **Deterministic randomization** — question/option order seeded by `(student_id, exam_id)` (FR-10).
 5. **Proctoring privacy** — browser sensors send flag events + compressed thumbnails only; no continuous
    video is stored or transmitted (NFR-10/11). Severity weights feed a display-only integrity score that
