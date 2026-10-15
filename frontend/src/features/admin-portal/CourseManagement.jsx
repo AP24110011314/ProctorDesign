@@ -10,7 +10,7 @@ import './CourseManagement.css';
  * existing exams, attempts, and results keep working.
  */
 
-const emptyForm = { code: '', name: '', description: '', faculty: '', is_active: true };
+const emptyForm = { code: '', name: '', description: '', is_active: true };
 
 const fieldError = (err, field) => {
   const data = err.response?.data;
@@ -80,23 +80,7 @@ export const CourseManagement = () => {
     if (showForm && codeInputRef.current) codeInputRef.current.focus();
   }, [showForm]);
 
-  // Fill in the faculty search text once the options arrive (e.g. editing a
-  // course whose assignee wasn't in the list when the modal opened).
-  useEffect(() => {
-    if (editing && editing.faculty && !facultyQuery) {
-      const match = facultyOptions.find((f) => f.id === editing.faculty);
-      if (match) {
-        setFacultyQuery(facultyDisplay(match));
-      } else if (editing.faculty_name) {
-        setFacultyQuery(
-          editing.faculty_email
-            ? `${editing.faculty_name} (${editing.faculty_email})`
-            : editing.faculty_name
-        );
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [facultyOptions]);
+
 
   const loadCourses = async () => {
     try {
@@ -133,19 +117,9 @@ export const CourseManagement = () => {
       code: course.code || '',
       name: course.name || '',
       description: course.description || '',
-      faculty: course.faculty ?? '',
       is_active: course.is_active,
     });
-    const known = facultyOptions.find((f) => f.id === course.faculty);
-    setFacultyQuery(
-      known
-        ? facultyDisplay(known)
-        : course.faculty
-          ? course.faculty_email
-            ? `${course.faculty_name || ''} (${course.faculty_email})`.trim()
-            : course.faculty_name || ''
-          : ''
-    );
+    setFacultyQuery(course.faculty_name || '');
     setFormErrors({});
     setShowForm(true);
   };
@@ -163,24 +137,9 @@ export const CourseManagement = () => {
     if (formErrors[name]) setFormErrors({ ...formErrors, [name]: '' });
   };
 
-  const matchFaculty = (text) => {
-    const query = (text || '').trim().toLowerCase();
-    if (!query) return null;
-    return (
-      facultyOptions.find((f) => facultyDisplay(f).toLowerCase() === query) ||
-      null
-    );
-  };
-
   const handleFacultyQueryChange = (e) => {
-    const value = e.target.value;
-    setFacultyQuery(value);
-    const match = matchFaculty(value);
-    setFormData({
-      ...formData,
-      faculty: value.trim() === '' ? '' : match ? match.id : formData.faculty,
-    });
-    if (formErrors.faculty) setFormErrors({ ...formErrors, faculty: '' });
+    setFacultyQuery(e.target.value);
+    if (formErrors.faculty_name) setFormErrors({ ...formErrors, faculty_name: '' });
   };
 
   const handleSubmit = async (e) => {
@@ -188,15 +147,7 @@ export const CourseManagement = () => {
     const errors = {};
     if (!formData.code.trim()) errors.code = 'Course code is required.';
     if (!formData.name.trim()) errors.name = 'Course name is required.';
-    let facultyId = null;
-    if (facultyQuery.trim() !== '') {
-      const match = matchFaculty(facultyQuery);
-      if (!match) {
-        errors.faculty = 'Select a faculty from the list, or clear the field for unassigned.';
-      } else {
-        facultyId = match.id;
-      }
-    }
+    if (!facultyQuery.trim()) errors.faculty_name = 'Faculty in-charge name is required.';
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
@@ -208,22 +159,31 @@ export const CourseManagement = () => {
         code: formData.code.trim(),
         name: formData.name.trim(),
         description: formData.description.trim(),
-        faculty: facultyId,
+        faculty_name: facultyQuery.trim(),
         is_active: formData.is_active,
       };
+      let saved;
       if (editing) {
-        await adminService.updateCourse(editing.id, payload);
-        setNotice(`Course ${payload.code} updated.`);
+        saved = await adminService.updateCourse(editing.id, payload);
+        setNotice(
+          saved?.linked_faculty
+            ? `Course ${payload.code} updated (linked to faculty login ${saved.linked_faculty.email}).`
+            : `Course ${payload.code} updated (“${payload.faculty_name}” kept as a label — no matching faculty login).`
+        );
       } else {
-        await adminService.createCourse(payload);
-        setNotice(`Course ${payload.code} created.`);
+        saved = await adminService.createCourse(payload);
+        setNotice(
+          saved?.linked_faculty
+            ? `Course ${payload.code} created (linked to faculty login ${saved.linked_faculty.email}).`
+            : `Course ${payload.code} created (“${payload.faculty_name}” kept as a label — no matching faculty login).`
+        );
       }
       setShowForm(false);
       setEditing(null);
       loadCourses();
     } catch (err) {
       const serverErrors = {};
-      for (const field of ['code', 'name', 'description', 'faculty', 'is_active']) {
+      for (const field of ['code', 'name', 'description', 'faculty_name', 'is_active']) {
         const msg = fieldError(err, field);
         if (msg) serverErrors[field] = msg;
       }
@@ -261,13 +221,18 @@ export const CourseManagement = () => {
     }
   };
 
-  const facultyLabel = (course) => {
-    if (course.faculty_name) {
-      return course.faculty_email
-        ? `${course.faculty_name} (${course.faculty_email})`
-        : course.faculty_name;
-    }
-    return 'Unassigned';
+  const facultyCell = (course) => {
+    if (!course.faculty_name) return 'Unassigned';
+    return (
+      <>
+        {course.faculty_name}{' '}
+        {course.linked_faculty ? (
+          <span className="status-pill status-active">linked login</span>
+        ) : (
+          <span className="status-pill status-inactive">label only</span>
+        )}
+      </>
+    );
   };
 
   return (
@@ -354,7 +319,7 @@ export const CourseManagement = () => {
                     <strong>{course.code}</strong>
                   </td>
                   <td>{course.name}</td>
-                  <td>{facultyLabel(course)}</td>
+                  <td>{facultyCell(course)}</td>
                   <td>
                     <span
                       className={`status-pill ${course.is_active ? 'status-active' : 'status-inactive'}`}
@@ -466,7 +431,7 @@ export const CourseManagement = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="course-faculty">Assigned faculty</label>
+                <label htmlFor="course-faculty">Faculty in-charge *</label>
                 <input
                   id="course-faculty"
                   name="facultyQuery"
@@ -474,11 +439,11 @@ export const CourseManagement = () => {
                   list="course-faculty-list"
                   value={facultyQuery}
                   onChange={handleFacultyQueryChange}
-                  placeholder="Type a name to search... (blank = unassigned)"
+                  placeholder="Type any faculty name..."
                   autoComplete="off"
-                  aria-invalid={Boolean(formErrors.faculty)}
+                  aria-invalid={Boolean(formErrors.faculty_name)}
                   aria-describedby={
-                    formErrors.faculty ? 'course-faculty-error' : 'course-faculty-hint'
+                    formErrors.faculty_name ? 'course-faculty-error' : 'course-faculty-hint'
                   }
                 />
                 <datalist id="course-faculty-list">
@@ -487,11 +452,12 @@ export const CourseManagement = () => {
                   ))}
                 </datalist>
                 <p className="field-hint" id="course-faculty-hint">
-                  Active faculty only. Leave blank for unassigned.
+                  Any name works. If it matches a registered faculty login, their
+                  account is linked automatically so the course appears in their lists.
                 </p>
-                {formErrors.faculty && (
+                {formErrors.faculty_name && (
                   <p className="field-error" id="course-faculty-error" role="alert">
-                    {formErrors.faculty}
+                    {formErrors.faculty_name}
                   </p>
                 )}
               </div>

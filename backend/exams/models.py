@@ -16,8 +16,18 @@ class Course(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name='courses',
-        limit_choices_to={'role': 'faculty'}
+        limit_choices_to={'role': 'faculty'},
+        help_text="Linked faculty login (set automatically when the typed "
+                  "in-charge name matches an active faculty account)"
+    )
+    faculty_name = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        help_text="Faculty in-charge name as typed by the admin; "
+                  "may be any name, not necessarily a registered account"
     )
     is_active = models.BooleanField(
         default=True,

@@ -10,21 +10,61 @@ from system.models import AuditLog, log_action
 from .models import Course
 
 
+def resolve_faculty_user(name):
+    """Link a typed in-charge name to a faculty login account.
+
+    Returns the active faculty user when the name uniquely matches one
+    (email first, then username, then full name, all case-insensitive);
+    otherwise None — the name is then kept as a plain label.
+    """
+    text = (name or '').strip()
+    if not text:
+        return None
+    base = User.objects.filter(role=User.Role.FACULTY, is_active=True)
+    user = base.filter(email__iexact=text).first()
+    if user is not None:
+        return user
+    user = base.filter(username__iexact=text).first()
+    if user is not None:
+        return user
+    lowered = text.lower()
+    matches = [
+        u for u in base
+        if f"{(u.first_name or '').strip()} {(u.last_name or '').strip()}".strip().lower() == lowered
+    ]
+    if len(matches) == 1:
+        return matches[0]
+    return None
+
+
 class AdminCourseSerializer(serializers.ModelSerializer):
-    """Admin manage-courses serializer (create/edit/deactivate, never delete)."""
-    faculty_name = serializers.CharField(source='faculty.get_full_name', read_only=True)
-    faculty_email = serializers.CharField(source='faculty.email', read_only=True, default=None)
-    faculty = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(), allow_null=True, required=False, default=None
-    )
+    """Admin manage-courses serializer (create/edit/deactivate, never delete).
+
+    Assigned faculty is free text: any name is accepted and stored in
+    ``faculty_name``. When the typed name matches an active faculty login,
+    the ``faculty`` link is set automatically so that faculty member gets
+    the course in their dropdowns; otherwise the name stays a label.
+    """
+    faculty = serializers.PrimaryKeyRelatedField(read_only=True)
+    linked_faculty = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
         fields = [
-            'id', 'code', 'name', 'description', 'faculty', 'faculty_name',
-            'faculty_email', 'is_active', 'created_at', 'updated_at',
+            'id', 'code', 'name', 'description', 'faculty_name', 'faculty',
+            'linked_faculty', 'is_active', 'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'faculty', 'created_at', 'updated_at']
+
+    def get_linked_faculty(self, obj):
+        if obj.faculty_id is None:
+            return None
+        user = obj.faculty
+        return {
+            'id': user.id,
+            'display_name': user.get_full_name() or user.username,
+            'email': user.email,
+        }
 
     def validate_code(self, value):
         code = (value or '').strip()
@@ -43,18 +83,23 @@ class AdminCourseSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Course name is required.')
         return name
 
-    def validate_faculty(self, value):
-        if value is None:
-            return value
-        if value.role != User.Role.FACULTY:
-            raise serializers.ValidationError('Assigned user must have the Faculty role.')
-        if not value.is_active:
-            raise serializers.ValidationError('Assigned faculty account is not active.')
-        return value
+    def validate_faculty_name(self, value):
+        name = (value or '').strip()
+        if not name:
+            raise serializers.ValidationError('Faculty in-charge name is required.')
+        return name
 
-    def validate(self, data):
-        # limit_choices_to on the model FK is form-layer only; enforce here.
-        return data
+    def create(self, validated_data):
+        course = Course(**validated_data)
+        course.faculty = resolve_faculty_user(course.faculty_name)
+        course.save()
+        return course
+
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data)
+        instance.faculty = resolve_faculty_user(instance.faculty_name)
+        instance.save(update_fields=['faculty', 'updated_at'])
+        return instance
 
 
 class AdminCourseViewSet(

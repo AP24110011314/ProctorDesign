@@ -12,6 +12,8 @@ User = get_user_model()
 class AdminCourseTests(TestCase):
     """
     Admin course management: create/edit/list via /api/admin/courses/.
+    Assigned faculty is free text (any name); it links the faculty login
+    only when the typed name matches an active faculty account.
     No hard delete — deactivation via is_active instead.
     """
 
@@ -39,23 +41,48 @@ class AdminCourseTests(TestCase):
             password='FacultyPass123!', role='faculty', is_active=False,
         )
         self.course = Course.objects.create(
-            code='CS101', name='Programming', faculty=self.faculty,
+            code='CS101', name='Programming',
+            faculty=self.faculty, faculty_name='Test Faculty',
         )
 
     # -- admin happy paths -------------------------------------------------
 
-    def test_admin_can_create_course(self):
+    def test_admin_can_create_course_with_typed_faculty_name(self):
         self.client.force_authenticate(user=self.admin)
         response = self.client.post('/api/admin/courses/', {
             'code': 'CS102', 'name': 'Data Structures',
-            'description': 'Intro DS', 'faculty': self.faculty.id,
+            'description': 'Intro DS', 'faculty_name': 'Test Faculty',
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         course = Course.objects.get(code='CS102')
+        self.assertEqual(course.faculty_name, 'Test Faculty')
+        # Typed name matched the registered faculty → login linked.
         self.assertEqual(course.faculty, self.faculty)
+        self.assertEqual(response.data['linked_faculty']['email'], 'faculty@example.edu')
         self.assertTrue(course.is_active)
         self.assertTrue(AuditLog.objects.filter(
             action=AuditLog.Action.COURSE_CREATE, target_id=course.id).exists())
+
+    def test_admin_can_create_course_with_any_name_label_only(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post('/api/admin/courses/', {
+            'code': 'CS103', 'name': 'Guest Lecture',
+            'faculty_name': 'Dr. Visiting Scholar',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        course = Course.objects.get(code='CS103')
+        self.assertEqual(course.faculty_name, 'Dr. Visiting Scholar')
+        self.assertIsNone(course.faculty)
+        self.assertIsNone(response.data['linked_faculty'])
+
+    def test_faculty_name_is_required(self):
+        self.client.force_authenticate(user=self.admin)
+        for bad in ('', '   '):
+            response = self.client.post('/api/admin/courses/', {
+                'code': 'CS104', 'name': 'No Owner', 'faculty_name': bad,
+            }, format='json')
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn('faculty_name', response.data)
 
     def test_admin_can_list_search_and_filter_courses(self):
         Course.objects.create(code='MA101', name='Calculus', is_active=False)
@@ -74,14 +101,15 @@ class AdminCourseTests(TestCase):
         codes = [c['code'] for c in response.data['results']]
         self.assertEqual(codes, ['MA101'])
 
-    def test_admin_can_edit_course_and_reassign_faculty(self):
+    def test_admin_can_edit_course_and_reassign_by_typing_name(self):
         self.client.force_authenticate(user=self.admin)
         response = self.client.patch(f'/api/admin/courses/{self.course.id}/', {
-            'name': 'Programming I', 'faculty': self.faculty2.id,
+            'name': 'Programming I', 'faculty_name': 'faculty2',
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.course.refresh_from_db()
         self.assertEqual(self.course.name, 'Programming I')
+        self.assertEqual(self.course.faculty_name, 'faculty2')
         self.assertEqual(self.course.faculty, self.faculty2)
 
     def test_admin_can_deactivate_and_reactivate(self):
@@ -124,7 +152,7 @@ class AdminCourseTests(TestCase):
     # -- RBAC ----------------------------------------------------------------
 
     def test_faculty_and_student_get_403(self):
-        payload = {'code': 'CS999', 'name': 'Nope'}
+        payload = {'code': 'CS999', 'name': 'Nope', 'faculty_name': 'Nobody'}
         for user in (self.faculty, self.student):
             self.client.force_authenticate(user=user)
             self.assertEqual(
@@ -151,7 +179,7 @@ class AdminCourseTests(TestCase):
         self.client.force_authenticate(user=self.admin)
         for code in ('CS101', 'cs101', '  Cs101  '):
             response = self.client.post('/api/admin/courses/', {
-                'code': code, 'name': 'Dup',
+                'code': code, 'name': 'Dup', 'faculty_name': 'Someone',
             }, format='json')
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             self.assertIn('code', response.data)
@@ -159,26 +187,46 @@ class AdminCourseTests(TestCase):
     def test_code_is_trimmed_and_name_required(self):
         self.client.force_authenticate(user=self.admin)
         response = self.client.post('/api/admin/courses/', {
-            'code': '  CS103  ', 'name': '  Algorithms  ',
+            'code': '  CS105  ', 'name': '  Algorithms  ',
+            'faculty_name': '  Test Faculty  ',
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         course = Course.objects.get(pk=response.data['id'])
-        self.assertEqual(course.code, 'CS103')
+        self.assertEqual(course.code, 'CS105')
+        self.assertEqual(course.faculty_name, 'Test Faculty')
+        self.assertEqual(course.faculty, self.faculty)
 
         response = self.client.post('/api/admin/courses/', {
-            'code': 'CS104', 'name': '   ',
+            'code': 'CS106', 'name': '   ', 'faculty_name': 'Someone',
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('name', response.data)
 
-    def test_assigning_non_faculty_or_inactive_faculty_rejected(self):
+    def test_names_matching_non_faculty_or_inactive_accounts_stay_labels(self):
+        # Role + active checks survive inside the name resolution: only
+        # active faculty logins ever get linked.
         self.client.force_authenticate(user=self.admin)
-        for user_id in (self.student.id, self.inactive_faculty.id, self.admin.id):
+        for label in ('student1', 'student@example.edu', 'admin1', 'faculty3',
+                       'faculty3@example.edu'):
             response = self.client.post('/api/admin/courses/', {
-                'code': f'CX{user_id}', 'name': 'Bad assign', 'faculty': user_id,
+                'code': f'CX{abs(hash(label)) % 10000}',
+                'name': 'Label only', 'faculty_name': label,
             }, format='json')
-            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-            self.assertIn('faculty', response.data)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            course = Course.objects.get(pk=response.data['id'])
+            self.assertEqual(course.faculty_name, label)
+            self.assertIsNone(course.faculty)
+            self.assertIsNone(response.data['linked_faculty'])
+
+    def test_name_matching_by_email_links_faculty(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post('/api/admin/courses/', {
+            'code': 'CS107', 'name': 'Email Match',
+            'faculty_name': 'FACULTY2@EXAMPLE.EDU',
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        course = Course.objects.get(code='CS107')
+        self.assertEqual(course.faculty, self.faculty2)
 
     # -- deactivation semantics -------------------------------------------------
 
@@ -235,7 +283,7 @@ class AdminCourseTests(TestCase):
         )
         self.client.force_authenticate(user=self.admin)
         response = self.client.patch(f'/api/admin/courses/{self.course.id}/', {
-            'faculty': self.faculty2.id,
+            'faculty_name': 'faculty2',
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 

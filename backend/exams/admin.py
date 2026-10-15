@@ -10,9 +10,9 @@ class QuestionOptionInline(admin.TabularInline):
 
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
-    list_display = ['code', 'name', 'faculty', 'created_at']
+    list_display = ['code', 'name', 'faculty_name', 'faculty', 'created_at']
     list_filter = ['faculty', 'created_at']
-    search_fields = ['code', 'name']
+    search_fields = ['code', 'name', 'faculty_name']
     ordering = ['code']
 
 
