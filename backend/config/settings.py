@@ -27,9 +27,17 @@ load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-this-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+DEBUG = os.getenv('DEBUG', 'True').strip().lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = [
+    h.strip() for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+    if h.strip()
+]
+# Render injects the public hostname; accept it without requiring the owner
+# to copy-paste it into ALLOWED_HOSTS (deployment-only, no behavior change).
+_render_host = os.getenv('RENDER_EXTERNAL_HOSTNAME', '').strip()
+if _render_host and _render_host not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(_render_host)
 
 
 # Application definition
@@ -56,6 +64,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # WhiteNoise: serve admin + collected static files under Gunicorn
+    # (Render has no separate static host on the free tier).
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -88,17 +99,33 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-# Per AI_RULES.md §6: SQLite for local dev, PostgreSQL for production
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql' if os.getenv('DB_ENGINE') == 'postgresql' else 'django.db.backends.sqlite3',
-        'NAME': os.getenv('DB_NAME', BASE_DIR / 'db.sqlite3'),
-        'USER': os.getenv('DB_USER', ''),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', ''),
-        'PORT': os.getenv('DB_PORT', '5432'),
+# Per AI_RULES.md §6: SQLite for local dev, PostgreSQL for production.
+# Production (Render) provides DATABASE_URL; local DB_* variables keep working
+# as a fallback. DATABASE_URL wins when both are set.
+DATABASE_URL = os.getenv('DATABASE_URL', '').strip()
+if DATABASE_URL:
+    try:
+        import dj_database_url
+        DATABASES = {
+            'default': dj_database_url.parse(
+                DATABASE_URL,
+                conn_max_age=int(os.getenv('DB_CONN_MAX_AGE', '600')),
+                ssl_require=os.getenv('DB_SSL_REQUIRE', 'True').strip().lower() in ('true', '1', 'yes'),
+            )
+        }
+    except ImportError:  # pragma: no cover - dj-database-url is in requirements.txt
+        raise RuntimeError('DATABASE_URL is set but dj-database-url is not installed')
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql' if os.getenv('DB_ENGINE') == 'postgresql' else 'django.db.backends.sqlite3',
+            'NAME': os.getenv('DB_NAME', BASE_DIR / 'db.sqlite3'),
+            'USER': os.getenv('DB_USER', ''),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'HOST': os.getenv('DB_HOST', ''),
+            'PORT': os.getenv('DB_PORT', '5432'),
+        }
     }
-}
 
 
 # Password validation
@@ -137,10 +164,41 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+# Compressed + hashed filenames so admin CSS/JS work behind Gunicorn.
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
-# Media files (uploads)
+# Media files (uploads).
+# Local disk in DEBUG only. In production (DEBUG=False) Render's disk is
+# ephemeral, so reference photos + proctoring thumbnails go to Cloudinary
+# when its credentials are configured (see below); otherwise Django falls
+# back to local disk and logs a warning at startup (data will not persist
+# across deploys — set the CLOUDINARY_* vars to fix).
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / os.getenv('MEDIA_ROOT', 'media')
+
+CLOUDINARY_CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME', '').strip()
+CLOUDINARY_API_KEY = os.getenv('CLOUDINARY_API_KEY', '').strip()
+CLOUDINARY_API_SECRET = os.getenv('CLOUDINARY_API_SECRET', '').strip()
+USE_CLOUDINARY = bool(CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET)
+if USE_CLOUDINARY:
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
+        'API_KEY': CLOUDINARY_API_KEY,
+        'API_SECRET': CLOUDINARY_API_SECRET,
+    }
+    STORAGES['default']['BACKEND'] = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+# Secret shared with the free external pinger (e.g. cron-job.org) that calls
+# the auto-submit sweep endpoint. Never commit a real value; empty means the
+# endpoint stays locked (returns 403).
+CRON_SECRET = os.getenv('CRON_SECRET', '')
 
 
 # Email
@@ -182,15 +240,27 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# CORS Settings
-CORS_ALLOWED_ORIGINS = os.getenv(
-    'CORS_ALLOWED_ORIGINS',
-    'http://localhost:5173,http://127.0.0.1:5173'
-).split(',')
+# CORS Settings (no trailing slash on origins — the Vercel URL goes here)
+CORS_ALLOWED_ORIGINS = [
+    o.strip() for o in os.getenv(
+        'CORS_ALLOWED_ORIGINS',
+        'http://localhost:5173,http://127.0.0.1:5173'
+    ).split(',') if o.strip()
+]
+# Trusted origins for CSRF (same Vercel URL, no trailing slash).
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
+    if o.strip()
+]
 
 CORS_ALLOW_CREDENTIALS = True
 
-# Celery Configuration (for background workers per ARCHITECTURE.md §3.5)
+# Celery Configuration (for background workers per ARCHITECTURE.md §3.5).
+# Optional: CELERY_ENABLED=False (the production default below) keeps the app
+# from requiring Redis at import time. Local dev keeps the old behavior.
+CELERY_ENABLED = os.getenv(
+    'CELERY_ENABLED', 'True' if DEBUG else 'False'
+).strip().lower() in ('true', '1', 'yes')
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
@@ -206,6 +276,25 @@ PROCTORING_DATA_RETENTION_DAYS = int(os.getenv('PROCTORING_DATA_RETENTION_DAYS',
 # for short answers. Off by default; suggestions are never auto-applied —
 # faculty always enter the final marks (SRS.md FR-27).
 AI_ASSIST_GRADING_ENABLED = os.getenv('AI_ASSIST_GRADING_ENABLED', 'False') == 'True'
+
+# Production hardening (applies only when DEBUG=False, i.e. on Render).
+# Render terminates TLS at its proxy and forwards http internally, so we
+# trust X-Forwarded-Proto to detect the original https request.
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    # Honor an explicit opt-out for environments without HTTPS termination.
+    if os.getenv('SECURE_SSL_REDIRECT', 'True').strip().lower() in ('true', '1', 'yes'):
+        SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # Modest HSTS on the free tier (avoid over-long pinning while iterating).
+    SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '3600'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
+    # Allow the pinger + Vercel frontend through Django's host check even if
+    # RENDER_EXTERNAL_HOSTNAME is unset (ALLOW extra hosts via env).
+    if not ALLOWED_HOSTS or ALLOWED_HOSTS == ['']:
+        ALLOWED_HOSTS = ['*'] if os.getenv('ALLOW_ANY_HOST', 'False').strip().lower() in ('true', '1', 'yes') else ALLOWED_HOSTS
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
