@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.db import transaction
 from authentication.permissions import require_role
 from authentication.models import User
+from .auto_submit import auto_submit_attempt_if_expired
 from .models import Exam, Attempt, AttemptAnswer, AttemptQuestion, ExamQuestion
 from proctoring.views import EventReportThrottle
 from .attempt_serializers import (
@@ -106,6 +107,18 @@ class AttemptViewSet(viewsets.ModelViewSet):
         """
         return super().destroy(request, *args, **kwargs)
 
+    def retrieve(self, request, *args, **kwargs):
+        """Fetch one attempt; lazily auto-submit first if past end_time (NFR-14).
+
+        Without Celery beat in production, the deadline is enforced when the
+        attempt is next touched — fetch counts as a touch.
+        """
+        attempt = self.get_object()
+        auto_submit_attempt_if_expired(attempt)
+        attempt.refresh_from_db()
+        serializer = self.get_serializer(attempt, context={'request': request})
+        return Response(serializer.data)
+
     @action(detail=False, methods=['post'])
     @require_role(User.Role.STUDENT)
     def start_exam(self, request):
@@ -128,6 +141,14 @@ class AttemptViewSet(viewsets.ModelViewSet):
         existing_attempt = Attempt.objects.filter(exam=exam, student=student).first()
         if existing_attempt:
             if existing_attempt.status == Attempt.Status.IN_PROGRESS:
+                # Lazy deadline: an expired attempt is force-submitted on touch
+                # (NFR-14 without Celery beat), so a re-start becomes a
+                # completed attempt instead of a silent timer extension.
+                if auto_submit_attempt_if_expired(existing_attempt):
+                    return Response(
+                        {'error': 'You have already completed this exam'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
                 # Return existing in-progress attempt
                 return Response(
                     AttemptSerializer(existing_attempt, context={'request': request}).data,
@@ -193,19 +214,17 @@ class AttemptViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
 
+        # Lazy deadline enforcement (NFR-14): autosave counts as a touch.
+        if auto_submit_attempt_if_expired(attempt):
+            return Response(
+                {'error': 'Time expired', 'auto_submitted': True},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         # Check if attempt is still in progress
         if attempt.status != Attempt.Status.IN_PROGRESS:
             return Response(
                 {'error': 'Attempt is not in progress'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Check if time has expired (server-side check)
-        if attempt.is_expired:
-            # Auto-submit if expired
-            self._auto_submit_attempt(attempt)
-            return Response(
-                {'error': 'Time expired', 'auto_submitted': True},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -244,9 +263,7 @@ class AttemptViewSet(viewsets.ModelViewSet):
         if attempt.student != request.user:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
 
-        if attempt.is_expired and attempt.status == Attempt.Status.IN_PROGRESS:
-            # Auto-submit if expired
-            self._auto_submit_attempt(attempt)
+        if auto_submit_attempt_if_expired(attempt):
             return Response({
                 'remaining_seconds': 0,
                 'expired': True,
@@ -270,6 +287,14 @@ class AttemptViewSet(viewsets.ModelViewSet):
 
         if attempt.student != request.user:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Lazy deadline (NFR-14): submitting after end_time records an
+        # auto-submit, not a manual submit, so the transcript is honest.
+        if auto_submit_attempt_if_expired(attempt):
+            return Response(
+                {'message': 'Time expired — exam auto-submitted', 'auto_submitted': True},
+                status=status.HTTP_200_OK
+            )
 
         if not attempt.can_submit():
             return Response(
@@ -302,6 +327,11 @@ class AttemptViewSet(viewsets.ModelViewSet):
         GET /api/attempts/{attempt_id}/result/
         """
         attempt = self.get_object()
+        # Results count as a touch: an expired attempt auto-submits first so
+        # the student lands on the graded result instead of a stale timer.
+        if attempt.student == request.user:
+            auto_submit_attempt_if_expired(attempt)
+            attempt.refresh_from_db()
 
         if attempt.student != request.user and not (request.user.is_superuser or request.user.role in (User.Role.ADMIN, User.Role.FACULTY)):
             return Response(
@@ -381,6 +411,10 @@ class AttemptViewSet(viewsets.ModelViewSet):
                 {'error': {'code': 'forbidden', 'message': 'Not your attempt'}},
                 status=status.HTTP_403_FORBIDDEN,
             )
+        # Flag ingest counts as a touch (NFR-14); expired attempts stop
+        # accepting flags once auto-submitted.
+        auto_submit_attempt_if_expired(attempt)
+        attempt.refresh_from_db()
         if attempt.status != Attempt.Status.IN_PROGRESS:
             return Response(
                 {'error': {'code': 'not_in_progress',
@@ -450,6 +484,8 @@ class AttemptViewSet(viewsets.ModelViewSet):
                 {'error': {'code': 'forbidden', 'message': 'Not your attempt'}},
                 status=status.HTTP_403_FORBIDDEN,
             )
+        auto_submit_attempt_if_expired(attempt)
+        attempt.refresh_from_db()
         if attempt.status != Attempt.Status.IN_PROGRESS:
             return Response(
                 {'error': {'code': 'not_in_progress',
@@ -521,9 +557,9 @@ class AttemptViewSet(viewsets.ModelViewSet):
         })
 
     def _auto_submit_attempt(self, attempt):
-        """Helper to auto-submit expired attempt (graded like a manual submit)"""
-        attempt.status = Attempt.Status.AUTO_SUBMITTED
-        attempt.submitted_at = timezone.now()
-        attempt.save()
-        from grading.services import grade_attempt
-        grade_attempt(attempt)
+        """Helper to auto-submit expired attempt (graded like a manual submit).
+
+        Delegates to exams/auto_submit.py so Celery, cron, and lazy checks
+        share one code path.
+        """
+        auto_submit_attempt_if_expired(attempt)

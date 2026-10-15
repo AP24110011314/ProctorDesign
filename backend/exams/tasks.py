@@ -14,26 +14,13 @@ def auto_submit_expired_attempts():
     Auto-submit sweep: finds attempts past their end_time and force-submits them
     This is the server-side timer enforcement per SRS.md NFR-14 and AI_RULES.md §4
 
-    Run this task every 30-60 seconds via Celery beat
+    Run this task every 30-60 seconds via Celery beat. The core loop lives in
+    exams/auto_submit.py so the cron endpoint + management command share it
+    (free-tier production has no Celery worker).
     """
-    now = timezone.now()
+    from .auto_submit import sweep_expired_attempts
 
-    # Find all in-progress attempts that have exceeded their end_time
-    expired_attempts = Attempt.objects.filter(
-        status=Attempt.Status.IN_PROGRESS,
-        end_time__lte=now
-    )
-
-    from grading.services import grade_attempt
-
-    count = 0
-    for attempt in expired_attempts:
-        attempt.status = Attempt.Status.AUTO_SUBMITTED
-        attempt.submitted_at = now
-        attempt.save()
-        grade_attempt(attempt)
-        count += 1
-
+    count = sweep_expired_attempts()
     return f"Auto-submitted {count} expired attempt(s)"
 
 
