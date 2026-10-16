@@ -96,17 +96,25 @@ export const AuthProvider = ({ children }) => {
   };
 
   const role = typeof user?.role === 'string' ? user.role : null;
+  const isSuperuser = user?.is_superuser === true;
+  // What the topbar badge shows. Superusers get the admin console and pass
+  // every server-side role check, so the badge names their effective role
+  // ('admin') instead of echoing a possibly stale role label from the row.
+  // This is display-only, derived from the backend-issued is_superuser flag
+  // (never email or localStorage guessing) — it grants no privilege.
+  const displayRole = !user ? 'unknown' : isSuperuser ? 'admin' : role || 'unknown';
   const value = {
     user,
     login,
     register,
     logout,
     loading,
+    displayRole,
     isAuthenticated: !!user,
     isStudent: role === 'student',
     isFaculty: role === 'faculty',
-    isAdmin: role === 'admin' || user?.is_superuser === true,
-    isSuperuser: user?.is_superuser === true,
+    isAdmin: role === 'admin' || isSuperuser,
+    isSuperuser,
     hasKnownRole: role != null && KNOWN_ROLES.has(role),
   };
 

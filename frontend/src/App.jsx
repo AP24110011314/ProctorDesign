@@ -21,7 +21,7 @@ import './App.css';
 const Icon = ({ children }) => <span className="nav-icon" aria-hidden="true">{children}</span>;
 
 const Topbar = () => {
-  const { user, logout } = useAuth();
+  const { user, displayRole, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -30,11 +30,6 @@ const Topbar = () => {
   };
 
   const initial = (user?.email || user?.username || '?').charAt(0).toUpperCase();
-  // Display-only: always reflects the backend-issued role (normalized to
-  // lowercase by AuthProvider). Never inferred or defaulted here — a
-  // missing role renders as 'unknown' rather than a guessed value.
-  const displayRole =
-    typeof user?.role === 'string' && user.role ? user.role : 'unknown';
 
   return (
     <header className="topbar">
