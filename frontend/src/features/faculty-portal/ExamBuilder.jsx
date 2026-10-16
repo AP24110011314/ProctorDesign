@@ -13,10 +13,11 @@ export const ExamBuilder = ({ examId = null }) => {
   const [questions, setQuestions] = useState([]);
   const [selectedQuestions, setSelectedQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     course: '',
     title: '',
     start_time: '',
@@ -29,7 +30,9 @@ export const ExamBuilder = ({ examId = null }) => {
     shuffle_questions: true,
     shuffle_options: true,
     proctoring_mode: 'basic',
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
 
   useEffect(() => {
     loadInitialData();
@@ -118,10 +121,17 @@ export const ExamBuilder = ({ examId = null }) => {
 
   const handleSubmit = async (e, publish = true) => {
     e.preventDefault();
+    // In-flight guard: without this, a double-click (or an impatient
+    // second click while the first POST is still pending) sends the create
+    // request twice and the backend — correctly — persists two exams.
+    if (submitting) return;
+    setSubmitting(true);
     setError('');
+    setSuccess('');
 
     if (!examId && selectedQuestions.length === 0) {
       setError('Select at least one question in Step 2 before creating the exam.');
+      setSubmitting(false);
       return;
     }
 
@@ -138,6 +148,7 @@ export const ExamBuilder = ({ examId = null }) => {
         if (publish) {
           await examService.publishExam(examId);
         }
+        setSuccess(publish ? 'Exam successfully updated and published!' : 'Exam safely saved as draft.');
       } else {
         const exam = await examService.createExam(payload);
 
@@ -153,10 +164,18 @@ export const ExamBuilder = ({ examId = null }) => {
         if (publish) {
           await examService.publishExam(exam.id);
         }
-      }
 
-      setSuccess(publish ? 'Exam successfully created and published!' : 'Exam safely saved as draft.');
-      // Optional: reset step or redirect
+        setSuccess(
+          publish
+            ? `Exam "${exam.title}" created and published! The form was reset — check Manage Exams.`
+            : `Draft "${exam.title}" saved! The form was reset — check Manage Exams.`
+        );
+        // Reset the wizard so a follow-up click cannot re-post the same
+        // payload as a second exam.
+        setFormData(initialFormData);
+        setSelectedQuestions([]);
+        setStep(1);
+      }
     } catch (err) {
       const data = err.response?.data;
       if (data?.error?.message) {
@@ -170,6 +189,8 @@ export const ExamBuilder = ({ examId = null }) => {
       } else {
         setError('Failed to create exam');
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -482,12 +503,13 @@ export const ExamBuilder = ({ examId = null }) => {
               <button
                 type="button"
                 onClick={(e) => handleSubmit(e, false)}
+                disabled={submitting}
                 className="btn-secondary"
               >
-                Save as Draft
+                {submitting ? 'Saving…' : 'Save as Draft'}
               </button>
-              <button type="submit" className="btn-primary">
-                {examId ? 'Update & Publish' : 'Create & Publish'}
+              <button type="submit" disabled={submitting} className="btn-primary">
+                {submitting ? 'Creating…' : examId ? 'Update & Publish' : 'Create & Publish'}
               </button>
             </>
           )}
