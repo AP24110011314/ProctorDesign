@@ -61,7 +61,8 @@ def grade_attempt(attempt):
     graded = 0
     for answer in AttemptAnswer.objects.filter(attempt=attempt).select_related('question'):
         q = answer.question
-        if q.type not in ('mcq_single', 'mcq_multi'):
+        from exams.models import is_mcq_type
+        if not is_mcq_type(getattr(q, 'type', '')):
             continue
         is_correct, marks = grade_mcq_answer(q, answer.selected_option_ids, exam)
         answer.is_correct = is_correct

@@ -49,7 +49,8 @@ def generate_randomized_questions(student_id, exam):
 
         # Shuffle options for MCQ if enabled
         shuffled_option_order = []
-        if exam.shuffle_options and question.type in ['mcq_single', 'mcq_multi']:
+        from .models import is_mcq_type
+        if exam.shuffle_options and is_mcq_type(getattr(question, 'type', '')):
             options = list(question.options.all().values_list('id', flat=True))
             rng.shuffle(options)
             shuffled_option_order = options

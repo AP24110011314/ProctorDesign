@@ -22,7 +22,8 @@ class AttemptQuestionSerializer(serializers.ModelSerializer):
 
     def get_options(self, obj):
         """Return shuffled options for MCQ questions (never expose is_correct to students per NFR-6)"""
-        if obj.question.type in ['mcq_single', 'mcq_multi']:
+        from .models import is_mcq_type
+        if is_mcq_type(getattr(obj.question, 'type', '')):
             options = list(obj.question.options.all())
 
             # Apply shuffled order if available

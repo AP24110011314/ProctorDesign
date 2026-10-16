@@ -10,7 +10,26 @@ import './ExamTaking.css';
  *
  * Critical: Timer is server-authoritative (NFR-14)
  * Client-side countdown is display only
+ *
+ * Type tolerance: legacy rows may carry type='MCQ' (bare, uppercase).
+ * Any case-insensitive mcq* variant renders options; bare 'MCQ' falls
+ * back to single-choice (radio) since the bank enforces one correct.
  */
+const normalizeQuestionType = (t) => String(t || '').trim().toLowerCase();
+const isMCQSingle = (t) => {
+  const n = normalizeQuestionType(t);
+  return n === 'mcq_single' || n === 'mcq' || n === 'single' || (n.includes('mcq') && !n.includes('multi'));
+};
+const isMCQMulti = (t) => {
+  const n = normalizeQuestionType(t);
+  return n === 'mcq_multi' || n === 'multi' || n === 'multiple' || (n.includes('mcq') && n.includes('multi'));
+};
+const isShortAnswer = (t) => {
+  const n = normalizeQuestionType(t);
+  return n === 'short_answer' || n === 'short' || n === 'text';
+};
+const getAttemptOptions = (q) => q?.options ?? q?.question_options ?? [];
+
 export const ExamTaking = () => {
   const { attemptId } = useParams();
   const navigate = useNavigate();
@@ -339,9 +358,12 @@ export const ExamTaking = () => {
               </div>
 
               {/* MCQ Options */}
-              {currentQuestion.question_type === 'mcq_single' && (
+              {isMCQSingle(currentQuestion.question_type) && (
                 <div className="options-list">
-                  {currentQuestion.options.map((option) => (
+                  {getAttemptOptions(currentQuestion).length === 0 && (
+                    <div className="options-missing">No options available for this question. Please contact your faculty.</div>
+                  )}
+                  {getAttemptOptions(currentQuestion).map((option) => (
                     <label key={option.id} className="option-item">
                       <input
                         type="radio"
@@ -359,9 +381,12 @@ export const ExamTaking = () => {
                 </div>
               )}
 
-              {currentQuestion.question_type === 'mcq_multi' && (
+              {isMCQMulti(currentQuestion.question_type) && (
                 <div className="options-list">
-                  {currentQuestion.options.map((option) => {
+                  {getAttemptOptions(currentQuestion).length === 0 && (
+                    <div className="options-missing">No options available for this question. Please contact your faculty.</div>
+                  )}
+                  {getAttemptOptions(currentQuestion).map((option) => {
                     const selectedIds = answers[currentQuestion.question_id]?.selected_option_ids || [];
                     return (
                       <label key={option.id} className="option-item">
@@ -383,7 +408,7 @@ export const ExamTaking = () => {
               )}
 
               {/* Short Answer */}
-              {currentQuestion.question_type === 'short_answer' && (
+              {isShortAnswer(currentQuestion.question_type) && (
                 <textarea
                   className="short-answer-input"
                   value={answers[currentQuestion.question_id]?.text_answer || ''}

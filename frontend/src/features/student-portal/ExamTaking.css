@@ -231,6 +231,15 @@
   color: #333;
 }
 
+.options-missing {
+  padding: 12px 14px;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 8px;
+  color: #c33;
+  font-size: 14px;
+}
+
 /* Short Answer */
 .short-answer-input {
   width: 100%;

@@ -48,6 +48,12 @@ class Question(models.Model):
     """
     Question model supporting MCQ and short answer types
     Implements SRS.md FR-6, FR-7, FR-8
+
+    NOTE: legacy rows imported via direct SQL may carry type='MCQ'
+    (uppercase, without _single/_multi suffix). Read paths must treat
+    any case-insensitive 'mcq*' variant as MCQ (see is_mcq_type below);
+    write paths (serializers) still enforce the canonical
+    mcq_single/mcq_multi/short_answer choices for new data.
     """
 
     class QuestionType(models.TextChoices):
@@ -98,6 +104,32 @@ class Question(models.Model):
 
     def __str__(self):
         return f"[{self.type}] {self.text[:50]}..."
+
+
+def normalize_question_type(value):
+    """Canonicalize legacy type labels (e.g. 'MCQ' -> 'mcq_single')."""
+    normalized = str(value or '').strip().lower()
+    if normalized in ('mcq', 'mcq_single', 'mcq-single', 'single', 'single_correct'):
+        return 'mcq_single'
+    if normalized in ('mcq_multi', 'mcq-multi', 'multi', 'multiple', 'multi_correct'):
+        return 'mcq_multi'
+    if normalized in ('short_answer', 'short-answer', 'short', 'text'):
+        return 'short_answer'
+    return normalized
+
+
+def is_mcq_type(value):
+    """True for any MCQ variant, including legacy 'MCQ' (case-insensitive)."""
+    return normalize_question_type(value) in ('mcq_single', 'mcq_multi')
+
+
+def is_mcq_single_type(value):
+    """True for single-answer MCQ, including legacy bare 'MCQ' (one correct)."""
+    return normalize_question_type(value) == 'mcq_single'
+
+
+def is_mcq_multi_type(value):
+    return normalize_question_type(value) == 'mcq_multi'
 
 
 class QuestionOption(models.Model):

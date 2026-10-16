@@ -227,6 +227,78 @@ class QuestionBankOptionsTests(TestCase):
             self.assertIn('text', opt)
             self.assertNotIn('is_correct', opt)
 
+    def test_legacy_MCQ_type_still_returns_options_in_attempt(self):
+        """Legacy rows with type='MCQ' must still serve options (exam-taking fix)."""
+        from .models import Attempt, AttemptQuestion, Exam
+        from django.utils import timezone as tz
+        legacy = Question.objects.create(
+            course=self.course, type='MCQ', text='Legacy MCQ?',
+            difficulty='easy', marks=1.0, created_by=self.faculty,
+        )
+        for i, t in enumerate(['A', 'B', 'C', 'D']):
+            QuestionOption.objects.create(
+                question=legacy, text=t, is_correct=(t == 'B'), order=i,
+            )
+        now = tz.now()
+        exam = Exam.objects.create(
+            course=self.course, title='Legacy Exam',
+            start_time=now - tz.timedelta(hours=1),
+            end_time=now + tz.timedelta(hours=1),
+            duration_minutes=60, question_count=1,
+            marks_per_question=1.0, is_published=True,
+            created_by=self.faculty,
+        )
+        attempt = Attempt.objects.create(
+            exam=exam, student=self.student,
+            end_time=now + tz.timedelta(minutes=60),
+        )
+        aq = AttemptQuestion.objects.create(
+            attempt=attempt, question=legacy, order=0,
+            shuffled_option_order=[o.id for o in legacy.options.all()],
+        )
+        from .attempt_serializers import AttemptQuestionSerializer
+        data = AttemptQuestionSerializer(aq).data
+        self.assertEqual(len(data['options']), 4)
+        for opt in data['options']:
+            self.assertNotIn('is_correct', opt)
+
+    def test_legacy_MCQ_type_is_graded(self):
+        """Legacy 'MCQ' answers must be auto-graded (not skipped)."""
+        from .models import AttemptAnswer, Exam, Attempt
+        from django.utils import timezone as tz
+        from grading.services import grade_attempt
+        legacy = Question.objects.create(
+            course=self.course, type='MCQ', text='Legacy grade?',
+            difficulty='easy', marks=1.0, created_by=self.faculty,
+        )
+        opts = []
+        for i, t in enumerate(['A', 'B', 'C', 'D']):
+            opts.append(QuestionOption.objects.create(
+                question=legacy, text=t, is_correct=(t == 'B'), order=i,
+            ))
+        now = tz.now()
+        exam = Exam.objects.create(
+            course=self.course, title='Legacy Grade Exam',
+            start_time=now - tz.timedelta(hours=1),
+            end_time=now + tz.timedelta(hours=1),
+            duration_minutes=60, question_count=1,
+            marks_per_question=2.0, is_published=True,
+            created_by=self.faculty,
+        )
+        attempt = Attempt.objects.create(
+            exam=exam, student=self.student,
+            end_time=now + tz.timedelta(minutes=60),
+        )
+        AttemptAnswer.objects.create(
+            attempt=attempt, question=legacy,
+            selected_option_ids=[o.id for o in opts if o.is_correct],
+        )
+        graded = grade_attempt(attempt)
+        self.assertEqual(graded, 1)
+        ans = AttemptAnswer.objects.get(attempt=attempt, question=legacy)
+        self.assertTrue(ans.is_correct)
+        self.assertEqual(float(ans.marks_awarded), 2.0)
+
 
 class ExamConfigurationTests(TestCase):
     """
