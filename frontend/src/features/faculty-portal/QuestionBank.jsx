@@ -5,7 +5,20 @@ import './QuestionBank.css';
 /**
  * Question Bank page for Faculty (UI_UX_SPEC.md §4.7)
  * Implements SRS.md FR-6 to FR-8
+ *
+ * API contract: GET /api/questions/ returns options nested as `options`
+ * (see backend QuestionSerializer; related_name='options' on QuestionOption).
+ * Older payloads may use `question_options` — handled via fallback below.
  */
+const getQuestionOptions = (question) =>
+  question?.options ?? question?.question_options ?? [];
+
+const isMCQType = (type) => {
+  if (!type) return false;
+  const normalized = String(type).toLowerCase();
+  return normalized.includes('mcq');
+};
+
 export const QuestionBank = () => {
   const [questions, setQuestions] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -113,6 +126,7 @@ export const QuestionBank = () => {
   };
 
   const handleEdit = (question) => {
+    const existingOptions = getQuestionOptions(question);
     setEditingQuestion(question);
     setFormData({
       course: question.course,
@@ -121,7 +135,7 @@ export const QuestionBank = () => {
       difficulty: question.difficulty,
       topic: question.topic || '',
       marks: question.marks,
-      options: question.options || [],
+      options: existingOptions || [],
     });
     setShowForm(true);
   };
@@ -284,7 +298,7 @@ export const QuestionBank = () => {
             </div>
 
             {/* Options for MCQ */}
-            {(formData.type === 'mcq_single' || formData.type === 'mcq_multi') && (
+            {isMCQType(formData.type) && (
               <div className="options-section">
                 <h3>Options</h3>
                 {formData.options.map((option, index) => (
@@ -351,23 +365,26 @@ export const QuestionBank = () => {
               <th>Difficulty</th>
               <th>Topic</th>
               <th>Marks</th>
+              <th>Options</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {questions.length === 0 ? (
               <tr>
-                <td colSpan="7" className="empty-state">
+                <td colSpan="8" className="empty-state">
                   No questions found. Create your first question to get started.
                 </td>
               </tr>
             ) : (
-              questions.map((question) => (
+              questions.map((question) => {
+                const rowOptions = getQuestionOptions(question);
+                return (
                 <tr key={question.id}>
                   <td className="question-text">{question.text.substring(0, 80)}...</td>
                   <td>{question.course_name}</td>
                   <td>
-                    <span className="badge">{question.type.replace('_', ' ')}</span>
+                    <span className="badge">{String(question.type || '').replace('_', ' ')}</span>
                   </td>
                   <td>
                     <span className={`badge badge-${question.difficulty}`}>
@@ -376,6 +393,27 @@ export const QuestionBank = () => {
                   </td>
                   <td>{question.topic || '-'}</td>
                   <td>{question.marks}</td>
+                  <td className="question-options-cell">
+                    {isMCQType(question.type) ? (
+                      rowOptions.length > 0 ? (
+                        <ul className="question-options-list">
+                          {rowOptions.map((opt, idx) => (
+                            <li
+                              key={opt.id ?? idx}
+                              className={opt.is_correct ? 'option-correct' : ''}
+                            >
+                              {opt.is_correct ? '✓ ' : ''}
+                              {opt.text}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span className="options-missing">No options</span>
+                      )
+                    ) : (
+                      <span className="options-na">—</span>
+                    )}
+                  </td>
                   <td className="actions">
                     <button onClick={() => handleEdit(question)} className="btn-icon">
                       ✏️
@@ -385,7 +423,8 @@ export const QuestionBank = () => {
                     </button>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>

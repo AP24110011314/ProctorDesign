@@ -115,6 +115,119 @@ class QuestionBankTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
+class QuestionBankOptionsTests(TestCase):
+    """
+    Regression tests: options must appear in the Question Bank for
+    faculty/admin (field name `options`), while students stay locked out
+    and never see `is_correct` during active exams (NFR-6).
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = User.objects.create_user(
+            username='admin_opt', email='admin_opt@example.edu',
+            password='AdminPass123!', role='admin',
+        )
+        self.faculty = User.objects.create_user(
+            username='faculty_opt', email='faculty_opt@example.edu',
+            password='FacultyPass123!', role='faculty',
+        )
+        self.student = User.objects.create_user(
+            username='student_opt', email='student_opt@example.edu',
+            password='StudentPass123!', role='student',
+        )
+        self.course = Course.objects.create(
+            code='CSOPT', name='Options Course', faculty=self.faculty,
+        )
+        self.question = Question.objects.create(
+            course=self.course, type='mcq_single', text='What is 2 + 2?',
+            difficulty='easy', marks=1.0, created_by=self.faculty,
+        )
+        self.opt_texts = ['3', '4', '5', '6']
+        for i, t in enumerate(self.opt_texts):
+            QuestionOption.objects.create(
+                question=self.question, text=t,
+                is_correct=(t == '4'), order=i,
+            )
+
+    def _results(self, response):
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data
+        return data.get('results', data) if isinstance(data, dict) else data
+
+    def test_faculty_list_includes_four_options_with_one_correct(self):
+        self.client.force_authenticate(user=self.faculty)
+        results = self._results(self.client.get('/api/questions/'))
+        self.assertEqual(len(results), 1)
+        item = results[0]
+        # API contract: nested field must be `options`
+        self.assertIn('options', item)
+        self.assertNotIn('question_options', item)
+        self.assertEqual(len(item['options']), 4)
+        correct = [o for o in item['options'] if o.get('is_correct')]
+        self.assertEqual(len(correct), 1)
+        self.assertEqual(correct[0]['text'], '4')
+
+    def test_admin_list_includes_options_with_is_correct(self):
+        self.client.force_authenticate(user=self.admin)
+        results = self._results(self.client.get('/api/questions/'))
+        self.assertEqual(len(results), 1)
+        self.assertEqual(len(results[0]['options']), 4)
+        self.assertTrue(any(o.get('is_correct') for o in results[0]['options']))
+
+    def test_faculty_detail_includes_options(self):
+        self.client.force_authenticate(user=self.faculty)
+        response = self.client.get(f'/api/questions/{self.question.id}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['options']), 4)
+
+    def test_filtering_and_pagination_preserve_options(self):
+        self.client.force_authenticate(user=self.faculty)
+        # Filtering by course must not strip options
+        results = self._results(
+            self.client.get(f'/api/questions/?course={self.course.id}'))
+        self.assertEqual(len(results), 1)
+        self.assertEqual(len(results[0]['options']), 4)
+        # Explicit pagination page must not strip options
+        results = self._results(self.client.get('/api/questions/?page=1'))
+        self.assertEqual(len(results), 1)
+        self.assertEqual(len(results[0]['options']), 4)
+
+    def test_student_list_still_empty_no_leak(self):
+        self.client.force_authenticate(user=self.student)
+        results = self._results(self.client.get('/api/questions/'))
+        self.assertEqual(len(results), 0)
+
+    def test_attempt_payload_hides_is_correct_from_students(self):
+        """NFR-6: active-exam options expose id/text only, never is_correct."""
+        from .models import Exam, Attempt, AttemptQuestion
+        from django.utils import timezone as tz
+        now = tz.now()
+        exam = Exam.objects.create(
+            course=self.course, title='Opt Exam',
+            start_time=now - tz.timedelta(hours=1),
+            end_time=now + tz.timedelta(hours=1),
+            duration_minutes=60, question_count=1,
+            marks_per_question=1.0, is_published=True,
+            created_by=self.faculty,
+        )
+        attempt = Attempt.objects.create(
+            exam=exam, student=self.student,
+            end_time=now + tz.timedelta(minutes=60),
+        )
+        aq = AttemptQuestion.objects.create(
+            attempt=attempt, question=self.question, order=0,
+            shuffled_option_order=[o.id for o in self.question.options.all()],
+        )
+        from .attempt_serializers import AttemptQuestionSerializer
+        data = AttemptQuestionSerializer(aq).data
+        self.assertEqual(len(data['options']), 4)
+        for opt in data['options']:
+            self.assertIn('id', opt)
+            self.assertIn('text', opt)
+            self.assertNotIn('is_correct', opt)
+
+
 class ExamConfigurationTests(TestCase):
     """
     Test suite for Exam Configuration (SRS.md FR-9 to FR-12)

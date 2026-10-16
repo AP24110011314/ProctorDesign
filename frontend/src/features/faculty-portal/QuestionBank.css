@@ -217,6 +217,40 @@
   text-overflow: ellipsis;
 }
 
+.question-options-cell {
+  max-width: 280px;
+}
+
+.question-options-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.question-options-list li {
+  font-size: 13px;
+  color: #555;
+  padding: 2px 0;
+}
+
+.question-options-list li.option-correct {
+  color: #2F3A26;
+  font-weight: 700;
+}
+
+.options-missing {
+  color: #c33;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.options-na {
+  color: #999;
+}
+
 .badge {
   display: inline-block;
   padding: 4px 10px;
