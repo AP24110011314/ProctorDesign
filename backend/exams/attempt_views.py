@@ -359,6 +359,16 @@ class AttemptViewSet(viewsets.ModelViewSet):
                 question_id__in=[a.question_id for a in answers]
             ).values_list('id', 'text')
         )
+        # Robust lookup: selected ids may arrive as strings from older clients.
+        option_text_by_str_id = {str(k): v for k, v in option_text_by_id.items()}
+
+        def _option_text(oid):
+            if oid in option_text_by_id:
+                return option_text_by_id[oid]
+            text = option_text_by_str_id.get(str(oid), '')
+            if text == '' and isinstance(oid, str) and oid.isdigit():
+                text = option_text_by_id.get(int(oid), '')
+            return text
 
         items = []
         for ans in answers:
@@ -367,7 +377,7 @@ class AttemptViewSet(viewsets.ModelViewSet):
                 'question_text': ans.question.text,
                 'question_type': ans.question.type,
                 'selected_options': [
-                    option_text_by_id.get(oid, '') for oid in (ans.selected_option_ids or [])
+                    _option_text(oid) for oid in (ans.selected_option_ids or [])
                 ],
                 'text_answer': ans.text_answer or '',
                 'is_correct': ans.is_correct,

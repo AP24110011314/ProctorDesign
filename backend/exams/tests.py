@@ -299,6 +299,51 @@ class QuestionBankOptionsTests(TestCase):
         self.assertTrue(ans.is_correct)
         self.assertEqual(float(ans.marks_awarded), 2.0)
 
+    def test_legacy_MCQ_result_breakdown_shows_selected_text(self):
+        """Result items must resolve selected option text even for type='MCQ'."""
+        from .models import Attempt, AttemptAnswer, Exam
+        from django.utils import timezone as tz
+        legacy = Question.objects.create(
+            course=self.course, type='MCQ', text='Legacy result?',
+            difficulty='easy', marks=1.0, created_by=self.faculty,
+        )
+        opts = []
+        for i, t in enumerate(['A', 'B', 'C', 'D']):
+            opts.append(QuestionOption.objects.create(
+                question=legacy, text=t, is_correct=(t == 'B'), order=i,
+            ))
+        now = tz.now()
+        exam = Exam.objects.create(
+            course=self.course, title='Legacy Result Exam',
+            start_time=now - tz.timedelta(hours=1),
+            end_time=now + tz.timedelta(hours=1),
+            duration_minutes=60, question_count=1,
+            marks_per_question=1.0, is_published=True,
+            results_published=True, created_by=self.faculty,
+        )
+        attempt = Attempt.objects.create(
+            exam=exam, student=self.student,
+            end_time=now + tz.timedelta(minutes=60),
+            status='submitted', submitted_at=now,
+        )
+        correct_id = [o.id for o in opts if o.is_correct][0]
+        AttemptAnswer.objects.create(
+            attempt=attempt, question=legacy,
+            selected_option_ids=[correct_id],
+            is_correct=True, marks_awarded=1.0,
+        )
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get(f'/api/attempts/{attempt.id}/result/')
+        self.assertEqual(response.status_code, 200)
+        items = response.data['items']
+        self.assertEqual(len(items), 1)
+        # Must show the student's answer text, never blank when answered
+        self.assertEqual(items[0]['selected_options'], ['B'])
+        # NFR-6: correct ids / model answer still never exposed
+        self.assertNotIn('correct_options', response.data)
+        for item in items:
+            self.assertNotIn('model_answer', item)
+
 
 class ExamConfigurationTests(TestCase):
     """

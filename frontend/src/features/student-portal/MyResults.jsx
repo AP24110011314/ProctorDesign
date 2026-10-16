@@ -12,7 +12,13 @@ import './MyResults.css';
  * We fetch the exam list to know which exams have results_published=true so
  * we can disable the breakdown button proactively instead of letting students
  * click and get a confusing 403.
+ *
+ * Type tolerance: legacy rows may carry type='MCQ' (bare, uppercase).
+ * The MCQ check must be case-insensitive, or legacy answers render in the
+ * short-answer branch showing text_answer ('') as (blank).
  */
+const isMCQResultType = (t) => String(t || '').toLowerCase().startsWith('mcq');
+
 export const MyResults = () => {
   const [attempts, setAttempts] = useState([]);
   const [examsById, setExamsById] = useState({});
@@ -131,7 +137,7 @@ export const MyResults = () => {
                   {detail.items.map((item) => (
                     <div key={item.question_id} className="breakdown-item">
                       <p className="question">{item.question_text}</p>
-                      {item.question_type.startsWith('mcq') ? (
+                      {isMCQResultType(item.question_type) ? (
                         <p>
                           Your answer: {item.selected_options.join(', ') || <em>(blank)</em>}{' '}
                           {item.is_correct == null ? (
