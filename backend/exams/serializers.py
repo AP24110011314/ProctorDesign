@@ -1,5 +1,35 @@
+from datetime import datetime as dt_datetime
+import re
+
+from django.utils import timezone as dj_timezone
 from rest_framework import serializers
 from .models import Course, Question, QuestionOption, Exam, ExamQuestion
+
+
+# Matches an explicit offset designator at the end of an ISO 8601 string:
+# "Z" or "+05:30" / "-0430".
+OFFSET_RE = re.compile(r'(Z|[+-]\d{2}:?\d{2})$', re.IGNORECASE)
+
+
+class OffsetAwareDateTimeField(serializers.DateTimeField):
+    """
+    DateTimeField that rejects timezone-naive input.
+
+    DRF would otherwise silently assume UTC for a bare wall-clock
+    (TIME_ZONE='UTC'), shifting an IST schedule by +5:30 at write time.
+    Exam times must arrive as absolute instants with an explicit offset.
+    """
+    default_error_messages = {
+        'naive': 'Must include a timezone offset (e.g. +05:30 for IST).',
+    }
+
+    def to_internal_value(self, value):
+        if isinstance(value, str) and not OFFSET_RE.search(value.strip()):
+            self.fail('naive')
+        result = super().to_internal_value(value)
+        if isinstance(result, dt_datetime) and dj_timezone.is_naive(result):
+            self.fail('naive')
+        return result
 
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -134,6 +164,10 @@ class ExamSerializer(serializers.ModelSerializer):
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
     exam_questions = ExamQuestionSerializer(many=True, read_only=True)
     total_marks = serializers.DecimalField(max_digits=6, decimal_places=2, read_only=True)
+    # Timezone contract (see OffsetAwareDateTimeField): naive wall-clocks
+    # are rejected here instead of being silently stored as UTC.
+    start_time = OffsetAwareDateTimeField()
+    end_time = OffsetAwareDateTimeField()
 
     class Meta:
         model = Exam

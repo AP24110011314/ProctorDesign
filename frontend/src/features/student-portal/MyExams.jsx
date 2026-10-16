@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { examService } from '../../shared/api-client/examService';
 import { resultService } from '../../shared/api-client/gradingService';
+import { formatExamDateTime } from '../../shared/utils/dateTime';
 import './MyExams.css';
 
 /**
@@ -74,8 +75,8 @@ export const MyExams = () => {
                     {exam.total_marks} marks
                   </p>
                   <p className="meta">
-                    {new Date(exam.start_time).toLocaleString()} →{' '}
-                    {new Date(exam.end_time).toLocaleString()}
+                    {formatExamDateTime(exam.start_time)} →{' '}
+                    {formatExamDateTime(exam.end_time)}
                   </p>
                   <span className={`chip chip-${window}`}>{window}</span>{' '}
                   {attemptStatus && (

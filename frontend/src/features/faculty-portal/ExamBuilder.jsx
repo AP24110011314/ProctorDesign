@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { examService, courseService, questionService } from '../../shared/api-client/examService';
+import { fromDateTimeLocalToISO, formatExamDateTime } from '../../shared/utils/dateTime';
 import './ExamBuilder.css';
 
 /**
@@ -107,17 +108,13 @@ export const ExamBuilder = ({ examId = null }) => {
   };
 
   /**
-   * Ensure datetime-local values include seconds and timezone so Django
-   * DateTimeField can parse them without relying on input format config.
+   * Serialize a datetime-local wall-clock value as an explicit IST instant
+   * (ISO 8601 with +05:30). The backend stores UTC and rejects naive input,
+   * so the offset is attached exactly once, here — never via
+   * `new Date(value).toISOString()`, which would silently substitute the
+   * browser's timezone for IST.
    */
-  const normaliseDateTime = (dt) => {
-    if (!dt) return dt;
-    // datetime-local gives "YYYY-MM-DDTHH:MM"; append :00 if no seconds
-    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dt)) {
-      return `${dt}:00`;
-    }
-    return dt;
-  };
+  const serialiseDateTime = (dt) => fromDateTimeLocalToISO(dt);
 
   const handleSubmit = async (e, publish = true) => {
     e.preventDefault();
@@ -135,11 +132,22 @@ export const ExamBuilder = ({ examId = null }) => {
       return;
     }
 
+    let start_time;
+    let end_time;
+    try {
+      start_time = serialiseDateTime(formData.start_time);
+      end_time = serialiseDateTime(formData.end_time);
+    } catch {
+      setError('Start and end times must be valid dates and times (IST).');
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const payload = {
         ...formData,
-        start_time: normaliseDateTime(formData.start_time),
-        end_time: normaliseDateTime(formData.end_time),
+        start_time,
+        end_time,
         question_count: selectedQuestions.length,
       };
 
@@ -249,7 +257,7 @@ export const ExamBuilder = ({ examId = null }) => {
 
             <div className="form-row">
               <div className="form-group">
-                <label>Start Time *</label>
+                <label>Start Time (IST) *</label>
                 <input
                   type="datetime-local"
                   name="start_time"
@@ -260,7 +268,7 @@ export const ExamBuilder = ({ examId = null }) => {
               </div>
 
               <div className="form-group">
-                <label>End Time *</label>
+                <label>End Time (IST) *</label>
                 <input
                   type="datetime-local"
                   name="end_time"
@@ -270,6 +278,8 @@ export const ExamBuilder = ({ examId = null }) => {
                 />
               </div>
             </div>
+
+            <p className="hint">Times are entered and shown in IST (Asia/Kolkata).</p>
 
             <div className="form-group">
               <label>Duration (minutes) *</label>
@@ -452,6 +462,12 @@ export const ExamBuilder = ({ examId = null }) => {
                 </p>
                 <p>
                   <strong>Duration:</strong> {formData.duration_minutes} minutes
+                </p>
+                <p>
+                  <strong>Window (IST):</strong>{' '}
+                  {formData.start_time && formData.end_time
+                    ? `${formatExamDateTime(serialiseDateTime(formData.start_time))} → ${formatExamDateTime(serialiseDateTime(formData.end_time))}`
+                    : '—'}
                 </p>
                 <p>
                   <strong>Total Marks:</strong> {selectedQuestions.length * formData.marks_per_question}
