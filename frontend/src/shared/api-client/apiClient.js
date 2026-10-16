@@ -38,6 +38,11 @@ const clearTokensAndRedirect = () => {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
   localStorage.removeItem('user');
+  // Tell AuthProvider to drop its in-memory user immediately: the hard
+  // redirect below reloads the app on protected pages, but on public auth
+  // pages there is no redirect — without this event stale user state would
+  // linger and the UI could keep showing a role badge with no valid token.
+  window.dispatchEvent(new Event('auth:session-expired'));
   // ProtectedRoute already redirects unauthenticated users via React Router;
   // only hard-redirect when tokens existed but refresh failed, and avoid
   // looping when already on a public auth page.

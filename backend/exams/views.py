@@ -79,8 +79,10 @@ class QuestionViewSet(viewsets.ModelViewSet):
         user = self.request.user
         queryset = Question.objects.select_related('course', 'created_by').prefetch_related('options')
 
-        # Students should not access the question bank API directly
-        if user.is_student():
+        # Students should not access the question bank API directly.
+        # Superusers are exempt even if their role label is inconsistent:
+        # real students are never superusers, so the restriction stands.
+        if user.is_student() and not user.is_superuser:
             return queryset.none()
 
         # Faculty see questions from their courses
@@ -148,7 +150,7 @@ class ExamViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             return ExamListSerializer
         user = getattr(self.request, 'user', None)
-        if self.action == 'retrieve' and user is not None and callable(getattr(user, 'is_student', None)) and user.is_student():
+        if self.action == 'retrieve' and user is not None and callable(getattr(user, 'is_student', None)) and user.is_student() and not user.is_superuser:
             return ExamListSerializer
         return ExamSerializer
 
@@ -160,7 +162,7 @@ class ExamViewSet(viewsets.ModelViewSet):
         user = self.request.user
         queryset = Exam.objects.select_related('course', 'created_by')
 
-        if user.is_student():
+        if user.is_student() and not user.is_superuser:
             # Students see only published exams (SRS.md FR-12)
             queryset = queryset.filter(is_published=True)
         elif user.is_faculty() and not user.is_superuser:

@@ -128,4 +128,34 @@ class EnsureAdminCommandTests(TestCase):
             call_command('ensure_admin')  # second run must skip, not crash
         user = User.objects.get(email='boss@example.edu')
         self.assertTrue(user.is_superuser)
+        # create_superuser() leaves the model default role; the command must
+        # label bootstrapped superusers as admins (badge + queryset scoping).
+        self.assertEqual(user.role, 'admin')
         self.assertEqual(User.objects.filter(email='boss@example.edu').count(), 1)
+
+    def test_repairs_legacy_superuser_role(self):
+        """A pre-existing superuser stuck with role='student' gets repaired
+        (label fix only — no privilege change, no-op for non-superusers)."""
+        import os
+        from unittest import mock
+        from django.core.management import call_command
+
+        legacy = User.objects.create_superuser(
+            username='legacy', email='legacy@example.edu', password='x')
+        legacy.role = 'student'
+        legacy.save(update_fields=['role'])
+        plain = User.objects.create_user(
+            username='plain', email='plain@example.edu', password='x',
+            role='student')
+
+        env = {
+            'DJANGO_SUPERUSER_EMAIL': 'legacy@example.edu',
+            'DJANGO_SUPERUSER_PASSWORD': 'SuperSecret123!',
+        }
+        with mock.patch.dict(os.environ, env, clear=False):
+            call_command('ensure_admin')
+        legacy.refresh_from_db()
+        plain.refresh_from_db()
+        self.assertEqual(legacy.role, 'admin')
+        self.assertEqual(plain.role, 'student')
+        self.assertEqual(User.objects.filter(email='legacy@example.edu').count(), 1)

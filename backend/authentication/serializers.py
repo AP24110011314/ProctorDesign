@@ -88,9 +88,11 @@ class LoginSerializer(serializers.Serializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     """
-    Extended user profile with more detail for authenticated user
+    Extended user profile with more detail for authenticated user.
+    is_superuser is read-only (same as UserSerializer) so clients restoring
+    a session from /profile/ keep superuser-aware routing.
     """
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'phone', 'reference_photo_url', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'username', 'role', 'created_at', 'updated_at']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'is_superuser', 'phone', 'reference_photo_url', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'username', 'role', 'is_superuser', 'created_at', 'updated_at']

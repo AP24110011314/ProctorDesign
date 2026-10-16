@@ -24,6 +24,13 @@ export const authService = {
 
   getCurrentUser: () => {
     const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
+    if (!user) return null;
+    try {
+      const parsed = JSON.parse(user);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      // Corrupt entry: never resurrect it; validation lives in useAuth.
+      return null;
+    }
   },
 };

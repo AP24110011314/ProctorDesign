@@ -40,9 +40,24 @@ class Command(BaseCommand):
             or User.objects.filter(username=username).first()
         )
         if existing is not None:
-            self.stdout.write(self.style.SUCCESS(
-                f'ensure_admin skipped: admin "{existing.username}" already exists'
-            ))
+            # Repair path: a superuser whose role field is not 'admin'
+            # (e.g. created before this command set the role, since
+            # create_superuser() leaves the model default 'student') would
+            # otherwise be treated as a student by role-scoped querysets
+            # while still passing superuser-bypass route guards — i.e. a
+            # "Student" badge on the Admin Dashboard and an empty Question
+            # Bank. Repairing the label grants no new privilege: superusers
+            # already bypass role checks. Never touch non-superusers here.
+            if existing.is_superuser and existing.role != 'admin':
+                existing.role = 'admin'
+                existing.save(update_fields=['role'])
+                self.stdout.write(self.style.SUCCESS(
+                    f'ensure_admin repaired: superuser "{existing.username}" role set to admin'
+                ))
+            else:
+                self.stdout.write(self.style.SUCCESS(
+                    f'ensure_admin skipped: admin "{existing.username}" already exists'
+                ))
             return
 
         user = User.objects.create_superuser(
@@ -50,9 +65,11 @@ class Command(BaseCommand):
             email=email,
             password=password,
         )
-        # Custom User requires a role; superusers bypass checks but keep the
-        # row consistent for admin filters.
-        if hasattr(user, 'role') and not getattr(user, 'role', None):
+        # create_superuser() does not know about our custom role field, so
+        # the row keeps the model default ('student') unless we set it.
+        # Always label bootstrapped superusers as admins for consistency
+        # with role-scoped querysets and the SPA role badge.
+        if getattr(user, 'role', None) != 'admin':
             user.role = 'admin'
             user.save(update_fields=['role'])
         self.stdout.write(self.style.SUCCESS(

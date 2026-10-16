@@ -30,6 +30,11 @@ const Topbar = () => {
   };
 
   const initial = (user?.email || user?.username || '?').charAt(0).toUpperCase();
+  // Display-only: always reflects the backend-issued role (normalized to
+  // lowercase by AuthProvider). Never inferred or defaulted here — a
+  // missing role renders as 'unknown' rather than a guessed value.
+  const displayRole =
+    typeof user?.role === 'string' && user.role ? user.role : 'unknown';
 
   return (
     <header className="topbar">
@@ -48,7 +53,7 @@ const Topbar = () => {
       </div>
       {user && (
         <div className="topbar-user">
-          <span className={`role-badge ${user.role}`}>{user.role}</span>
+          <span className={`role-badge ${displayRole}`}>{displayRole}</span>
           <span className="avatar-circle" aria-hidden="true">{initial}</span>
           <span>{user.email}</span>
           <button className="btn-logout" onClick={handleLogout}>

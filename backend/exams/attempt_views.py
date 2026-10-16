@@ -74,7 +74,7 @@ class AttemptViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Students see only their own attempts; optional ?exam_id= filter for all roles."""
         user = self.request.user
-        if user.is_student():
+        if user.is_student() and not user.is_superuser:
             qs = Attempt.objects.filter(student=user).select_related('exam')
         elif user.is_faculty() or user.is_admin():
             # Faculty/Admin see all attempts (for monitoring, Phase 5)
