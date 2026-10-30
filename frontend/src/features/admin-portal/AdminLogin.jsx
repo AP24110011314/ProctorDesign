@@ -116,21 +116,23 @@ export const AdminLogin = () => {
           )}
 
           <div className="form-group premium-input-wrapper">
-            <label htmlFor="admin-email">Admin email</label>
+            <label htmlFor="admin-email">Admin email or username</label>
             <div className="input-with-icon">
               <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                 <polyline points="22,6 12,13 2,6"/>
               </svg>
               <input
-                type="email"
+                type="text"
                 id="admin-email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
                 required
-                placeholder="commander@proctox.edu"
-                autoComplete="email"
+                placeholder="admin@proctox.edu or admin"
+                autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
                 disabled={loading}
               />
             </div>
@@ -155,6 +157,16 @@ export const AdminLogin = () => {
                 disabled={loading}
               />
             </div>
+          </div>
+
+          <div className="demo-credentials-helper admin-helper">
+            <button
+              type="button"
+              className="demo-chip-btn premium-chip"
+              onClick={() => setFormData({ email: 'admin@proctox.edu', password: 'AdminPass123!' })}
+            >
+              ⚡ Fill Admin Demo Credentials
+            </button>
           </div>
 
           <button type="submit" className="btn-primary btn-premium" disabled={loading}>

@@ -304,6 +304,30 @@ button {
 .role-badge.admin { background: #2F3A26; color: #E9EFE0; border-color: #2F3A26; }
 .role-badge.unknown { background: transparent; color: var(--muted); border-style: dashed; }
 
+.demo-mode-pill {
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--sage-soft);
+  color: var(--sage-ink);
+  border: 1px solid var(--sage-border);
+  font-size: 0.68rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.demo-mode-pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #16a34a;
+}
+
 .btn-logout {
   padding: 0.46rem 0.95rem;
   border-radius: 999px;

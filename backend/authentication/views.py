@@ -46,11 +46,14 @@ def login_view(request):
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    email = serializer.validated_data['email']
+    identifier = serializer.validated_data['email'].strip()
     password = serializer.validated_data['password']
 
-    # Authenticate by email (not username)
-    user_obj = User.objects.filter(email=email).first()
+    # Authenticate by email (case-insensitive) or username (case-insensitive)
+    user_obj = (
+        User.objects.filter(email__iexact=identifier).first()
+        or User.objects.filter(username__iexact=identifier).first()
+    )
     if user_obj is not None:
         user = authenticate(request, username=user_obj.username, password=password)
     else:

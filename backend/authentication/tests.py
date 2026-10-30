@@ -77,6 +77,27 @@ class AuthenticationTests(TestCase):
         self.assertIn('access', response.data['tokens'])
         self.assertIn('refresh', response.data['tokens'])
 
+    def test_login_with_username(self):
+        """Test login works using username instead of email"""
+        self.client.post(self.register_url, self.student_data, format='json')
+        login_data = {
+            'email': self.student_data['username'],
+            'password': self.student_data['password']
+        }
+        response = self.client.post(self.login_url, login_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('tokens', response.data)
+
+    def test_login_case_insensitive_email(self):
+        """Test login is case-insensitive for email"""
+        self.client.post(self.register_url, self.student_data, format='json')
+        login_data = {
+            'email': self.student_data['email'].upper(),
+            'password': self.student_data['password']
+        }
+        response = self.client.post(self.login_url, login_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
     def test_login_invalid_credentials(self):
         """Test FR-3: Login fails with invalid credentials"""
         self.client.post(self.register_url, self.student_data, format='json')

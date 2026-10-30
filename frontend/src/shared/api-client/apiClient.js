@@ -1,17 +1,26 @@
 import axios from 'axios';
+import { isDemoModeActive, activateDemoMode, handleMockRequest } from './demoMockService';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+const RAW_API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+const API_BASE_URL = RAW_API_BASE.replace(/\/+$/, '');
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 15000,
 });
 
-// Request interceptor to add JWT token
+// Request interceptor to add JWT token & route through demo mock if active
 apiClient.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    // If demo mode is active or we are on a hosted deployment without a remote backend
+    if (isDemoModeActive()) {
+      config.adapter = () => handleMockRequest(config);
+      return config;
+    }
+
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -21,11 +30,7 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle token refresh
-// Single-flight: concurrent 401s share one refresh call. Without this,
-// N parallel 401s fire N refresh POSTs and ROTATE_REFRESH_TOKENS +
-// BLACKLIST_AFTER_ROTATION blacklists all but the first (backend
-// config/settings.py), logging the user out spuriously.
+// Response interceptor to handle token refresh & graceful demo fallback
 let refreshPromise = null;
 
 const isAuthEndpoint = (url = '') =>
@@ -38,14 +43,7 @@ const clearTokensAndRedirect = () => {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
   localStorage.removeItem('user');
-  // Tell AuthProvider to drop its in-memory user immediately: the hard
-  // redirect below reloads the app on protected pages, but on public auth
-  // pages there is no redirect — without this event stale user state would
-  // linger and the UI could keep showing a role badge with no valid token.
   window.dispatchEvent(new Event('auth:session-expired'));
-  // ProtectedRoute already redirects unauthenticated users via React Router;
-  // only hard-redirect when tokens existed but refresh failed, and avoid
-  // looping when already on a public auth page.
   const path = window.location.pathname;
   if (path !== '/login' && path !== '/register') {
     window.location.href = '/login';
@@ -53,6 +51,13 @@ const clearTokensAndRedirect = () => {
 };
 
 const doRefresh = async () => {
+  if (isDemoModeActive()) {
+    const role = (JSON.parse(localStorage.getItem('user') || '{}').role) || 'student';
+    const access = `demo_jwt_access_token_${role}_${Date.now()}`;
+    localStorage.setItem('access_token', access);
+    return access;
+  }
+
   if (!refreshPromise) {
     const refreshToken = localStorage.getItem('refresh_token');
     if (!refreshToken) {
@@ -63,7 +68,6 @@ const doRefresh = async () => {
       .then((response) => {
         const { access, refresh: newRefresh } = response.data;
         localStorage.setItem('access_token', access);
-        // Backends with ROTATE_REFRESH_TOKENS return a new refresh token.
         if (newRefresh) {
           localStorage.setItem('refresh_token', newRefresh);
         }
@@ -81,9 +85,24 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Only attempt refresh for authenticated API calls: skip auth endpoints
-    // themselves, non-401s, already-retried requests, and requests that
-    // never had a token (logged-out user — ProtectedRoute handles redirect).
+    // Detect network failure (backend unreachable, mixed content block, offline, etc.)
+    const isNetworkError =
+      !error.response ||
+      error.code === 'ERR_NETWORK' ||
+      error.code === 'ECONNREFUSED' ||
+      (error.message && error.message.includes('Network Error'));
+
+    if (isNetworkError && originalRequest) {
+      // Gracefully switch to Demo Mode so preview deployments remain fully usable
+      activateDemoMode();
+      try {
+        return await handleMockRequest(originalRequest);
+      } catch (mockErr) {
+        return Promise.reject(mockErr);
+      }
+    }
+
+    // Only attempt refresh for authenticated API calls
     if (
       error.response?.status !== 401 ||
       !originalRequest ||
@@ -104,7 +123,6 @@ apiClient.interceptors.response.use(
       originalRequest.headers.Authorization = `Bearer ${access}`;
       return apiClient(originalRequest);
     } catch (refreshError) {
-      // Refresh token expired/invalid/blacklisted — drop stale credentials.
       clearTokensAndRedirect();
       return Promise.reject(refreshError);
     }

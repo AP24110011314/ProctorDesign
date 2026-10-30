@@ -91,17 +91,19 @@ export const Login = () => {
             )}
 
             <div className="form-group">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="email">Email or Username</label>
               <input
-                type="email"
+                type="text"
                 id="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
                 required
-                autoComplete="email"
+                autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
                 disabled={loading}
-                placeholder="you@example.edu"
+                placeholder="admin@proctox.edu or admin"
               />
             </div>
 
@@ -126,6 +128,33 @@ export const Login = () => {
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+            </div>
+
+            <div className="demo-credentials-helper">
+              <span className="demo-helper-label">Quick Demo Fill:</span>
+              <div className="demo-helper-chips">
+                <button
+                  type="button"
+                  className="demo-chip-btn"
+                  onClick={() => setFormData({ email: 'admin@proctox.edu', password: 'AdminPass123!' })}
+                >
+                  ⚡ Admin
+                </button>
+                <button
+                  type="button"
+                  className="demo-chip-btn"
+                  onClick={() => setFormData({ email: 'faculty@proctox.edu', password: 'FacultyPass123!' })}
+                >
+                  ⚡ Faculty
+                </button>
+                <button
+                  type="button"
+                  className="demo-chip-btn"
+                  onClick={() => setFormData({ email: 'student@proctox.edu', password: 'StudentPass123!' })}
+                >
+                  ⚡ Student
                 </button>
               </div>
             </div>

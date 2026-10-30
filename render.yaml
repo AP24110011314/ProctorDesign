@@ -1,0 +1,50 @@
+# ProctoX Render Blueprint — one-click production deploy (free tier).
+# Push to GitHub, then Render → New → Blueprint → select this repo.
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: proctox-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: >-
+      pip install -r requirements.txt &&
+      python manage.py collectstatic --noinput &&
+      python manage.py migrate &&
+      python manage.py seed_demo_users
+    startCommand: gunicorn config.wsgi:application
+    healthCheckPath: /api/health/
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: DEBUG
+        value: False
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: ""
+      - key: DATABASE_URL
+        fromDatabase:
+          name: proctox-db
+          property: connectionString
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: CELERY_ENABLED
+        value: False
+      - key: CRON_SECRET
+        generateValue: true
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: SECURE_HSTS_SECONDS
+        value: 3600
+
+databases:
+  - name: proctox-db
+    databaseName: proctox
+    user: proctox
+    plan: free

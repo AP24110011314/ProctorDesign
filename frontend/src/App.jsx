@@ -17,6 +17,7 @@ import { ExamTaking } from './features/student-portal/ExamTaking';
 import { SystemOverview } from './features/admin-portal/SystemOverview';
 import { CourseManagement } from './features/admin-portal/CourseManagement';
 import { AdminLogin } from './features/admin-portal/AdminLogin';
+import { isDemoModeActive } from './shared/api-client/demoMockService';
 import './App.css';
 
 const Icon = ({ children }) => <span className="nav-icon" aria-hidden="true">{children}</span>;
@@ -78,6 +79,11 @@ const Topbar = ({ onToggleNav, isNavOpen, hasNav }) => {
       </div>
       {user && (
         <div className="topbar-user">
+          {isDemoModeActive() && (
+            <span className="demo-mode-pill" title="Running in standalone interactive demo mode">
+              Demo
+            </span>
+          )}
           <span className={`role-badge ${displayRole}`}>{displayRole}</span>
           <span className="avatar-circle" title={user.email} aria-hidden="true">{initial}</span>
           <span className="user-email-text">{user.email}</span>

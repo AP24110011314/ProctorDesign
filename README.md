@@ -65,9 +65,11 @@ python manage.py seed_demo_users
 | **Student** | `student` | `student@proctox.edu` | `StudentPass123!` | `/login` | Pre-exam System Readiness Check (Camera & Screen), Exam Taking with real-time proctoring telemetry, Student Results View |
 
 > [!TIP]
+> - **Hosted Vercel Preview (Demo Mode):** When deployed on Vercel without a live backend connection, the app automatically runs in **interactive Demo Mode** with full offline persistence, allowing immediate testing of all three roles.
 > - **Direct Mission Control Entry:** Administrators can sign in directly at [`/admin/login`](http://localhost:5173/admin/login) or via the **Mission Control** button on the main login screen.
 > - **Smart Role-Based Routing:** Logging in via the main portal ([`/login`](http://localhost:5173/login)) automatically directs you to your role's portal (`/admin`, `/faculty`, or `/student`).
-> - **Mobile Optimized:** All interfaces—including tables, live monitor, grading queue, and exam builder—are fully responsive and mobile-friendly.
+> - **Quick-Fill Buttons:** Tap the **⚡ Admin**, **⚡ Faculty**, or **⚡ Student** buttons on the login screen to auto-fill credentials on mobile or desktop without typing.
+> - **Full-Stack Production Deployment:** For instructions on connecting your Vercel frontend to a live Render/PostgreSQL backend, see [`DEPLOYMENT.md`](./DEPLOYMENT.md).
 
 ---
 

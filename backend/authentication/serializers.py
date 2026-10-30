@@ -77,8 +77,9 @@ class RegisterSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     """
     Login serializer (SRS.md FR-3)
+    Accepts email address or username.
     """
-    email = serializers.EmailField(required=True)
+    email = serializers.CharField(required=True)
     password = serializers.CharField(
         required=True,
         write_only=True,

@@ -27,3 +27,4 @@ Thumbs.db
 # Documentation
 *.md
 !README.md
+!DEPLOYMENT.md
