@@ -213,14 +213,24 @@
 
 .question-text {
   font-weight: 500;
-  color: #333;
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: var(--ink, #2E2A23);
+  min-width: 240px;
+  max-width: 440px;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.5;
 }
 
 .question-options-cell {
-  max-width: 280px;
+  min-width: 180px;
+  max-width: 320px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.questions-mobile-cards {
+  display: none;
 }
 
 .question-options-list {
@@ -366,6 +376,200 @@
 
   .btn-delete-small {
     padding: 6px 10px;
+  }
+
+  .questions-table-desktop {
+    display: none;
+  }
+
+  .questions-mobile-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .qb-mobile-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border, #E3D9C6);
+    border-radius: 12px;
+    padding: 1.1rem;
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(46, 42, 35, 0.05));
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .qb-mobile-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--caramel, #DB9558);
+  }
+
+  .qb-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .qb-card-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: center;
+  }
+
+  .badge-course {
+    background: var(--caramel-ghost, #FBF3E2);
+    color: var(--caramel-ink, #4A2E14);
+    border: 1px solid var(--caramel-border, #E8CFA8);
+    font-weight: 700;
+  }
+
+  .qb-card-marks {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 0.2rem 0.55rem;
+    background: var(--sand-soft, #F7F3E9);
+    border: 1px solid var(--border-strong, #D9C9A3);
+    border-radius: 6px;
+    color: var(--caramel-ink, #4A2E14);
+    white-space: nowrap;
+  }
+
+  .qb-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .qb-card-question-text {
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: var(--ink, #2E2A23);
+    line-height: 1.5;
+    margin: 0;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+  }
+
+  .qb-card-topic {
+    font-size: 0.82rem;
+    color: var(--muted, #6F6759);
+  }
+
+  .qb-card-topic .topic-label {
+    font-weight: 600;
+    color: var(--ink, #2E2A23);
+  }
+
+  .qb-card-options {
+    background: var(--sand-soft, #F7F3E9);
+    border: 1px solid var(--border-subtle, #EDE6D8);
+    border-radius: 8px;
+    padding: 0.75rem 0.85rem;
+  }
+
+  .qb-options-label {
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted, #6F6759);
+    margin-bottom: 0.45rem;
+  }
+
+  .qb-mobile-options-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .qb-mobile-options-list li {
+    font-size: 0.86rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    color: #4A4438;
+    line-height: 1.4;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .qb-mobile-options-list li .opt-marker {
+    flex-shrink: 0;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--muted, #6F6759);
+    width: 14px;
+    text-align: center;
+  }
+
+  .qb-mobile-options-list li.option-correct {
+    color: var(--sage-ink, #2F3A26);
+    font-weight: 700;
+    background: rgba(151, 168, 122, 0.18);
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    border: 1px solid rgba(151, 168, 122, 0.4);
+  }
+
+  .qb-mobile-options-list li.option-correct .opt-marker {
+    color: var(--sage-deep, #465532);
+  }
+
+  .qb-card-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+  }
+
+  .qb-btn-action {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .qb-btn-edit {
+    background: #FFFDF4;
+    border: 1px solid var(--border-strong, #D9C9A3);
+    color: var(--caramel-ink, #4A2E14);
+  }
+
+  .qb-btn-edit:hover {
+    background: var(--caramel-ghost, #FBF3E2);
+    border-color: var(--caramel, #DB9558);
+  }
+
+  .qb-btn-delete {
+    background: #FFF5F5;
+    border: 1px solid #FECACA;
+    color: #B91C1C;
+  }
+
+  .qb-btn-delete:hover {
+    background: #FEE2E2;
   }
 }
 

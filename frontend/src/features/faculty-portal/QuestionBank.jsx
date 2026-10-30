@@ -375,8 +375,8 @@ export const QuestionBank = () => {
         </div>
       )}
 
-      {/* Questions Table */}
-      <div className="questions-table">
+      {/* Questions Table (Desktop / Tablet view) */}
+      <div className="questions-table questions-table-desktop">
         <table>
           <thead>
             <tr>
@@ -402,7 +402,7 @@ export const QuestionBank = () => {
                 const rowOptions = getQuestionOptions(question);
                 return (
                 <tr key={question.id}>
-                  <td className="question-text">{question.text.substring(0, 80)}...</td>
+                  <td className="question-text">{question.text}</td>
                   <td>{question.course_name}</td>
                   <td>
                     <span className="badge">{String(question.type || '').replace('_', ' ')}</span>
@@ -436,10 +436,10 @@ export const QuestionBank = () => {
                     )}
                   </td>
                   <td className="actions">
-                    <button onClick={() => handleEdit(question)} className="btn-icon">
+                    <button onClick={() => handleEdit(question)} className="btn-icon" aria-label="Edit question">
                       ✏️
                     </button>
-                    <button onClick={() => handleDelete(question.id)} className="btn-icon">
+                    <button onClick={() => handleDelete(question.id)} className="btn-icon" aria-label="Delete question">
                       🗑️
                     </button>
                   </td>
@@ -449,6 +449,86 @@ export const QuestionBank = () => {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Questions Cards (Mobile view - complete question with no cut-off) */}
+      <div className="questions-mobile-cards">
+        {questions.length === 0 ? (
+          <div className="empty-state">
+            No questions found. Create your first question to get started.
+          </div>
+        ) : (
+          questions.map((question) => {
+            const rowOptions = getQuestionOptions(question);
+            return (
+              <div key={question.id} className="qb-mobile-card">
+                <div className="qb-card-header">
+                  <div className="qb-card-badges">
+                    <span className="badge badge-course">{question.course_name || 'Course'}</span>
+                    <span className={`badge badge-${question.difficulty}`}>
+                      {question.difficulty}
+                    </span>
+                    <span className="badge">
+                      {String(question.type || '').replace('_', ' ')}
+                    </span>
+                  </div>
+                  <span className="qb-card-marks">
+                    {question.marks} {Number(question.marks) === 1 ? 'mark' : 'marks'}
+                  </span>
+                </div>
+
+                <div className="qb-card-body">
+                  <p className="qb-card-question-text">{question.text}</p>
+                  {question.topic && (
+                    <div className="qb-card-topic">
+                      <span className="topic-label">Topic:</span> {question.topic}
+                    </div>
+                  )}
+                </div>
+
+                {isMCQType(question.type) && (
+                  <div className="qb-card-options">
+                    <div className="qb-options-label">Options</div>
+                    {rowOptions.length > 0 ? (
+                      <ul className="qb-mobile-options-list">
+                        {rowOptions.map((opt, idx) => (
+                          <li
+                            key={opt.id ?? idx}
+                            className={opt.is_correct ? 'option-correct' : ''}
+                          >
+                            <span className="opt-marker">
+                              {opt.is_correct ? '✓' : '○'}
+                            </span>
+                            <span className="opt-text">{opt.text}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <span className="options-missing">No options</span>
+                    )}
+                  </div>
+                )}
+
+                <div className="qb-card-actions">
+                  <button
+                    type="button"
+                    onClick={() => handleEdit(question)}
+                    className="qb-btn-action qb-btn-edit"
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(question.id)}
+                    className="qb-btn-action qb-btn-delete"
+                  >
+                    🗑️ Delete
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

@@ -506,7 +506,7 @@ export const ExamBuilder = ({ examId = null }) => {
                 <ul>
                   {selectedQuestions.map((q) => (
                     <li key={q.id}>
-                      {q.text.substring(0, 60)}... ({q.type})
+                      {q.text} ({String(q.type || '').replace('_', ' ')})
                     </li>
                   ))}
                 </ul>
