@@ -45,6 +45,31 @@ The Student Dashboard provides students with a secure and monitored environment 
   </tr>
 </table>
 
+---
+
+## 👥 Demo Accounts & Credentials
+
+Pre-configured demo accounts for all three roles (**Admin**, **Faculty**, and **Student**) are ready to use. You can initialize or reset them at any time by running:
+
+```bash
+cd backend
+python manage.py seed_demo_users
+```
+
+### Credentials Table
+
+| Role | Username | Email | Password | Primary Portal | Access Privileges |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Admin** | `admin` | `admin@proctox.edu` | `AdminPass123!` | `/admin/login` or `/login` | Full Mission Control, System Overview, Course Management, Exam Controls, Live Proctor Monitoring, Attempt Voiding & Audit Logs |
+| **Faculty** | `faculty` | `faculty@proctox.edu` | `FacultyPass123!` | `/login` | Question Bank management, Exam Builder, Live Proctor Monitoring Room, Subjective Grading Queue, Results Publishing |
+| **Student** | `student` | `student@proctox.edu` | `StudentPass123!` | `/login` | Pre-exam System Readiness Check (Camera & Screen), Exam Taking with real-time proctoring telemetry, Student Results View |
+
+> [!TIP]
+> - **Direct Mission Control Entry:** Administrators can sign in directly at [`/admin/login`](http://localhost:5173/admin/login) or via the **Mission Control** button on the main login screen.
+> - **Smart Role-Based Routing:** Logging in via the main portal ([`/login`](http://localhost:5173/login)) automatically directs you to your role's portal (`/admin`, `/faculty`, or `/student`).
+> - **Mobile Optimized:** All interfaces—including tables, live monitor, grading queue, and exam builder—are fully responsive and mobile-friendly.
+
+---
 
 ## Quick Start (5 minutes)
 
@@ -60,8 +85,8 @@ source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env              # only once — skip if .env already exists (Windows: `copy .env.example .env`)
 python manage.py migrate
-python manage.py createsuperuser  # only once — follow the prompts (superusers bypass role checks, so no role prompt needed)
-        # every day: http://localhost:8000
+python manage.py seed_demo_users  # seeds demo admin, faculty, student accounts & sample courses
+python manage.py runserver        # every day: http://localhost:8000
 ```
 Run all Django commands with `backend/` as the working directory so `.env` loads.
 
@@ -76,7 +101,7 @@ cp .env.example .env              # only once — skip if .env already exists (W
 npm run dev                       # every day: http://localhost:5173
 ```
 
-Open http://localhost:5173, register as a student, and log in.
+Open http://localhost:5173 and log in with any demo account above or register a new account.
 
 **Stuck?**
 
@@ -145,7 +170,7 @@ source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env              # edit SECRET_KEY / DB creds as needed (Windows: `copy .env.example .env`)
 python manage.py migrate
-python manage.py createsuperuser  # creates a superuser (bypasses role checks, usable as admin)
+python manage.py seed_demo_users  # seeds demo admin, faculty, and student accounts
 python manage.py runserver        # http://localhost:8000
 curl http://localhost:8000/api/health/
 ```

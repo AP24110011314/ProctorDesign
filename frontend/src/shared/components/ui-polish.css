@@ -94,9 +94,30 @@
 .table-wrap {
   border: 1px solid var(--border, #E7DCC2) !important;
   border-radius: 14px !important;
-  overflow: hidden !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
   background: #fff !important;
   box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.06)) !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.questions-table::-webkit-scrollbar,
+.table-wrap::-webkit-scrollbar {
+  height: 6px;
+}
+
+.questions-table::-webkit-scrollbar-track,
+.table-wrap::-webkit-scrollbar-track {
+  background: var(--surface-soft, #FAF4E1);
+  border-radius: 4px;
+}
+
+.questions-table::-webkit-scrollbar-thumb,
+.table-wrap::-webkit-scrollbar-thumb {
+  background: var(--border-strong, #D9C9A3);
+  border-radius: 4px;
 }
 
 .questions-table table,

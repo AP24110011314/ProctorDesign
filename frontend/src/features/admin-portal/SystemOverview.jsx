@@ -92,12 +92,21 @@ export const SystemOverview = () => {
               <span className="stat-value">{overview.voided_attempts}</span>
               <span className="stat-label">Voided attempts</span>
             </div>
-            <div className="stat-card">
-              <span className="stat-value">
-                {overview.users_by_role.student}/{overview.users_by_role.faculty}/
-                {overview.users_by_role.admin}
-              </span>
-              <span className="stat-label">Students/Faculty/Admins</span>
+            <div className="stat-card stat-card-users">
+              <div className="role-counts-pill">
+                <span className="role-pill-item">
+                  <strong>{overview.users_by_role.student}</strong> <small>Students</small>
+                </span>
+                <span className="role-pill-sep" aria-hidden="true">/</span>
+                <span className="role-pill-item">
+                  <strong>{overview.users_by_role.faculty}</strong> <small>Faculty</small>
+                </span>
+                <span className="role-pill-sep" aria-hidden="true">/</span>
+                <span className="role-pill-item">
+                  <strong>{overview.users_by_role.admin}</strong> <small>Admins</small>
+                </span>
+              </div>
+              <span className="stat-label">Users by Role</span>
             </div>
           </div>
 

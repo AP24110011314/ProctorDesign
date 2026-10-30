@@ -55,6 +55,12 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
 .step-content h2 {
   font-size: 22px;
   color: #333;
@@ -301,6 +307,11 @@
   .step-content h2 {
     font-size: 1.2rem;
     margin-bottom: 18px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
 
   .questions-selection {

@@ -209,4 +209,8 @@
   .course-mgmt .page-header h1 {
     font-size: 1.4rem;
   }
+
+  .course-mgmt .modal-content {
+    padding: 1.25rem 1rem !important;
+  }
 }

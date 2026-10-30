@@ -129,3 +129,14 @@
     padding: 0.5rem 0.75rem;
   }
 }
+
+@media (max-width: 480px) {
+  .exam-mgmt-actions {
+    flex-direction: column;
+  }
+
+  .exam-mgmt-actions button {
+    width: 100%;
+    min-width: 100%;
+  }
+}
