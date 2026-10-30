@@ -179,13 +179,15 @@
 .questions-table {
   background: white;
   border-radius: 8px;
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .questions-table table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 620px;
 }
 
 .questions-table th {
@@ -322,29 +324,58 @@
 }
 
 @media (max-width: 768px) {
+  .question-bank-container {
+    padding: 0.5rem 0;
+  }
+
   .page-header {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .page-header .btn-primary {
+    width: 100%;
+    text-align: center;
   }
 
   .filters {
     grid-template-columns: 1fr;
+    padding: 12px;
+  }
+
+  .question-form-card {
+    padding: 18px 14px;
   }
 
   .form-row {
     grid-template-columns: 1fr;
   }
 
-  .questions-table {
-    overflow-x: auto;
+  .form-actions {
+    flex-direction: column;
   }
 
+  .form-actions button {
+    width: 100%;
+  }
+
+  .option-row {
+    grid-template-columns: 30px 1fr 40px;
+  }
+
+  .btn-delete-small {
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 480px) {
   .option-row {
     grid-template-columns: 30px 1fr;
   }
 
   .btn-delete-small {
     grid-column: 1 / -1;
+    width: 100%;
   }
 }

@@ -159,51 +159,53 @@ export const ResultsReport = () => {
       {loading && <div className="loading">Loading report...</div>}
 
       {exam && !loading && (
-        <table className="report-table">
-          <thead>
-            <tr>
-              <th>Student</th>
-              <th>Status</th>
-              <th>Score</th>
-              <th>Integrity</th>
-              <th>Submitted</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {attempts.length === 0 ? (
+        <div className="table-wrap">
+          <table className="report-table">
+            <thead>
               <tr>
-                <td colSpan="6" className="empty">No attempts for this exam yet.</td>
+                <th>Student</th>
+                <th>Status</th>
+                <th>Score</th>
+                <th>Integrity</th>
+                <th>Submitted</th>
+                <th>Action</th>
               </tr>
-            ) : (
-              attempts.map((a) => (
-                <tr key={a.id}>
-                  <td>
-                    <div style={{ fontWeight: 600 }}>{a.student_name || 'Student'}</div>
-                    <div style={{ fontSize: '0.85em', color: '#6F6759' }}>{a.student_username || `ID ${a.student}`}</div>
-                  </td>
-                  <td>{a.status}</td>
-                  <td>{a.score ?? '—'}</td>
-                  <td>{a.integrity_score ?? '—'}</td>
-                  <td>{a.submitted_at ? new Date(a.submitted_at).toLocaleString() : '—'}</td>
-                  <td>
-                    {a.status === 'voided' ? (
-                      <span className="hint">Voided</span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleVoid(a.id)}
-                        className="btn-danger"
-                      >
-                        Void
-                      </button>
-                    )}
-                  </td>
+            </thead>
+            <tbody>
+              {attempts.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="empty">No attempts for this exam yet.</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                attempts.map((a) => (
+                  <tr key={a.id}>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{a.student_name || 'Student'}</div>
+                      <div style={{ fontSize: '0.85em', color: '#6F6759' }}>{a.student_username || `ID ${a.student}`}</div>
+                    </td>
+                    <td>{a.status}</td>
+                    <td>{a.score ?? '—'}</td>
+                    <td>{a.integrity_score ?? '—'}</td>
+                    <td>{a.submitted_at ? new Date(a.submitted_at).toLocaleString() : '—'}</td>
+                    <td>
+                      {a.status === 'voided' ? (
+                        <span className="hint">Voided</span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleVoid(a.id)}
+                          className="btn-danger"
+                        >
+                          Void
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

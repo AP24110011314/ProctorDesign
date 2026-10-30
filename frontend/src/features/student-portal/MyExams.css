@@ -223,10 +223,44 @@
 }
 
 @media (max-width: 768px) {
+  .my-exams-container {
+    padding: 1rem 0;
+  }
+
+  .my-exams-container > h1:first-child {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+  }
+
   .exam-card {
     flex-direction: column;
     align-items: flex-start;
+    padding: 1.25rem 1rem;
+    gap: 1rem;
   }
-  .exam-actions { width: 100%; }
+  .exam-actions { width: 100%; gap: 0.5rem; }
   .exam-actions > * { flex: 1; text-align: center; }
+}
+
+@media (max-width: 480px) {
+  .my-exams-container > h1:first-child {
+    font-size: 1.5rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .exam-info h3 {
+    font-size: 1.1rem;
+  }
+
+  .meta {
+    font-size: 0.85rem;
+  }
+
+  .exam-actions {
+    flex-direction: column;
+  }
+
+  .exam-actions > * {
+    width: 100%;
+  }
 }

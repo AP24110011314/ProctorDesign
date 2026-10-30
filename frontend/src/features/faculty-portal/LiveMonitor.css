@@ -159,3 +159,51 @@
   padding: 2rem;
   text-align: center;
 }
+
+@media (max-width: 900px) {
+  .live-monitor-container {
+    padding: 0.5rem 0;
+  }
+
+  .monitor-layout {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .monitor-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+
+  .monitor-controls select {
+    width: 100%;
+  }
+
+  .filter-chips {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .chip-btn {
+    flex: 1;
+    text-align: center;
+  }
+
+  .event-head {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .event-time {
+    margin-left: 0;
+    width: 100%;
+    font-size: 0.8rem;
+  }
+
+  .event-thumb {
+    max-width: 100%;
+    width: 100%;
+    height: auto;
+  }
+}

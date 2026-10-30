@@ -105,44 +105,46 @@ export const SystemOverview = () => {
           {overview.flagged_attempts.length === 0 ? (
             <p className="empty">No flagged attempts.</p>
           ) : (
-            <table className="overview-table">
-              <thead>
-                <tr>
-                  <th>Attempt</th>
-                  <th>Student</th>
-                  <th>Exam</th>
-                  <th>Status</th>
-                  <th>Unreviewed</th>
-                  <th>Integrity</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {overview.flagged_attempts.map((a) => (
-                  <tr key={a.attempt_id}>
-                    <td>{a.attempt_id}</td>
-                    <td>{a.student_username}</td>
-                    <td>{a.exam_title}</td>
-                    <td>{a.status}</td>
-                    <td>{a.unreviewed_count}</td>
-                    <td>{a.integrity_score ?? '—'}</td>
-                    <td>
-                      {a.status === 'voided' ? (
-                        <span className="hint">Voided</span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleVoid(a.attempt_id)}
-                          className="btn-danger"
-                        >
-                          Void
-                        </button>
-                      )}
-                    </td>
+            <div className="table-wrap">
+              <table className="overview-table">
+                <thead>
+                  <tr>
+                    <th>Attempt</th>
+                    <th>Student</th>
+                    <th>Exam</th>
+                    <th>Status</th>
+                    <th>Unreviewed</th>
+                    <th>Integrity</th>
+                    <th>Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {overview.flagged_attempts.map((a) => (
+                    <tr key={a.attempt_id}>
+                      <td>{a.attempt_id}</td>
+                      <td>{a.student_username}</td>
+                      <td>{a.exam_title}</td>
+                      <td>{a.status}</td>
+                      <td>{a.unreviewed_count}</td>
+                      <td>{a.integrity_score ?? '—'}</td>
+                      <td>
+                        {a.status === 'voided' ? (
+                          <span className="hint">Voided</span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleVoid(a.attempt_id)}
+                            className="btn-danger"
+                          >
+                            Void
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </>
       )}
@@ -151,30 +153,32 @@ export const SystemOverview = () => {
       {audit.length === 0 ? (
         <p className="empty">No audit entries yet.</p>
       ) : (
-        <table className="overview-table">
-          <thead>
-            <tr>
-              <th>Time</th>
-              <th>Actor</th>
-              <th>Action</th>
-              <th>Target</th>
-              <th>Details</th>
-            </tr>
-          </thead>
-          <tbody>
-            {audit.map((e) => (
-              <tr key={e.id}>
-                <td>{new Date(e.timestamp).toLocaleString()}</td>
-                <td>{e.actor_username || `ID ${e.actor}`}</td>
-                <td>{e.action}</td>
-                <td>
-                  {e.target_type} #{e.target_id}
-                </td>
-                <td>{e.details?.reason || '—'}</td>
+        <div className="table-wrap">
+          <table className="overview-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Actor</th>
+                <th>Action</th>
+                <th>Target</th>
+                <th>Details</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {audit.map((e) => (
+                <tr key={e.id}>
+                  <td>{new Date(e.timestamp).toLocaleString()}</td>
+                  <td>{e.actor_username || `ID ${e.actor}`}</td>
+                  <td>{e.action}</td>
+                  <td>
+                    {e.target_type} #{e.target_id}
+                  </td>
+                  <td>{e.details?.reason || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

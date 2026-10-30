@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, NavLink, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './shared/hooks/useAuth';
 import { ProtectedRoute } from './shared/components/ProtectedRoute';
@@ -20,7 +21,7 @@ import './App.css';
 
 const Icon = ({ children }) => <span className="nav-icon" aria-hidden="true">{children}</span>;
 
-const Topbar = () => {
+const Topbar = ({ onToggleNav, isNavOpen, hasNav }) => {
   const { user, displayRole, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -33,25 +34,54 @@ const Topbar = () => {
 
   return (
     <header className="topbar">
-      <div className="brand">
-        <span className="brand-mark" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-11Z" stroke="currentColor" strokeWidth="1.8" />
-            <path d="M8 9.5l2.2 2.2L16 6.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M8 15.5h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-          </svg>
-        </span>
-        <span>
-          ProctoX
-          <small>Secure exams · Fair results</small>
-        </span>
+      <div className="topbar-left">
+        {hasNav && (
+          <button
+            type="button"
+            className="mobile-nav-toggle"
+            onClick={onToggleNav}
+            aria-label={isNavOpen ? 'Close navigation' : 'Open navigation'}
+            aria-expanded={isNavOpen}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              {isNavOpen ? (
+                <>
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </>
+              ) : (
+                <>
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </>
+              )}
+            </svg>
+          </button>
+        )}
+        <div className="brand">
+          <span className="brand-mark" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+              <path d="M32 3 C47 3 58 11 58 23 C58 43 43 55 32 61 C21 55 6 43 6 23 C6 11 17 3 32 3 Z" fill="currentColor" opacity="0.95" />
+              <path d="M14 31 C20 20 25.5 16 32 16 C38.5 16 44 20 50 31 C44 42 38.5 46 32 46 C25.5 46 20 42 14 31 Z" fill="#FCF9EA" stroke="#2E2A23" strokeWidth="2.2" />
+              <circle cx="32" cy="31" r="7" fill="#2E2A23" />
+              <circle cx="32" cy="31" r="3.5" fill="#DB9558" />
+              <circle cx="45" cy="45" r="9" fill="#57693F" stroke="#FFFFFF" strokeWidth="2" />
+              <path d="M41 45 L43.5 47.5 L49 42" stroke="#FFFFFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+          <span className="brand-text">
+            ProctoX
+            <small>Secure exams · Fair results</small>
+          </span>
+        </div>
       </div>
       {user && (
         <div className="topbar-user">
           <span className={`role-badge ${displayRole}`}>{displayRole}</span>
-          <span className="avatar-circle" aria-hidden="true">{initial}</span>
-          <span>{user.email}</span>
-          <button className="btn-logout" onClick={handleLogout}>
+          <span className="avatar-circle" title={user.email} aria-hidden="true">{initial}</span>
+          <span className="user-email-text">{user.email}</span>
+          <button className="btn-logout" onClick={handleLogout} title="Sign out of your account">
             Logout
           </button>
         </div>
@@ -60,28 +90,61 @@ const Topbar = () => {
   );
 };
 
-const Shell = ({ title, links, children, footNote }) => (
-  <div className="app-shell">
-    <Topbar />
-    <div className="layout">
-      <nav className="sidenav" aria-label={`${title} navigation`}>
-        <div className="sidenav-title">{title}</div>
-        {links.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            end={link.end}
-            className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
-          >
-            <Icon>{link.icon}</Icon> {link.label}
-          </NavLink>
-        ))}
-        <div className="sidenav-foot">{footNote || 'Flags are for human review — the system never auto-fails an attempt.'}</div>
-      </nav>
-      <main className="content">{children}</main>
+const Shell = ({ title, links, children, footNote }) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const closeMenu = () => setMobileMenuOpen(false);
+  const toggleMenu = () => setMobileMenuOpen((prev) => !prev);
+
+  return (
+    <div className="app-shell">
+      <Topbar onToggleNav={toggleMenu} isNavOpen={mobileMenuOpen} hasNav={Boolean(links?.length)} />
+      
+      {/* Backdrop for mobile drawer */}
+      {mobileMenuOpen && (
+        <div
+          className="mobile-nav-backdrop"
+          onClick={closeMenu}
+          aria-hidden="true"
+        />
+      )}
+
+      <div className="layout">
+        <nav
+          className={`sidenav ${mobileMenuOpen ? 'mobile-open' : ''}`}
+          aria-label={`${title} navigation`}
+        >
+          <div className="sidenav-header-mobile">
+            <div className="sidenav-title">{title} Portal</div>
+            <button
+              type="button"
+              className="sidenav-close-btn"
+              onClick={closeMenu}
+              aria-label="Close menu"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="sidenav-links-list">
+            {links.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end={link.end}
+                onClick={closeMenu}
+                className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+              >
+                <Icon>{link.icon}</Icon> <span>{link.label}</span>
+              </NavLink>
+            ))}
+          </div>
+          <div className="sidenav-foot">{footNote || 'Flags are for human review — the system never auto-fails an attempt.'}</div>
+        </nav>
+        <main className="content">{children}</main>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const StudentDashboard = () => (
   <Shell

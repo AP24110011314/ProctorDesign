@@ -274,19 +274,84 @@
 }
 
 @media (max-width: 768px) {
+  .exam-builder-container {
+    padding: 0.5rem 0;
+  }
+
+  .stepper {
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .step {
+    width: 34px;
+    height: 34px;
+    font-size: 13px;
+  }
+
+  .builder-header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+  }
+
+  .builder-form {
+    padding: 18px 14px !important;
+  }
+
+  .step-content h2 {
+    font-size: 1.2rem;
+    margin-bottom: 18px;
+  }
+
   .questions-selection {
     grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .available-questions,
+  .selected-questions {
+    padding: 14px;
   }
 
   .review-summary {
     grid-template-columns: 1fr;
+    gap: 15px;
   }
 
   .form-navigation {
     flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 15px;
   }
 
   .form-navigation button {
     width: 100%;
+    min-width: auto;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stepper {
+    gap: 6px;
+  }
+
+  .step {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+
+  .question-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .btn-add, .btn-remove {
+    width: 100%;
+    text-align: center;
+    padding: 8px;
   }
 }

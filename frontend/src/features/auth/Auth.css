@@ -273,12 +273,57 @@
 }
 
 @media (max-width: 600px) {
+  .auth-container {
+    padding: 16px 10px;
+    align-items: flex-start;
+  }
+
+  .auth-split {
+    border-radius: 18px;
+  }
+
+  .auth-panel {
+    padding: 24px 18px;
+  }
+
+  .auth-panel h2 {
+    font-size: 1.5rem;
+  }
+
   .auth-card {
-    padding: 30px 22px;
+    padding: 24px 18px;
+  }
+
+  .auth-header h1 {
+    font-size: 19px;
   }
 
   .form-row {
     grid-template-columns: 1fr;
+  }
+
+  .auth-admin .premium-glass {
+    padding: 20px 16px;
+    border-radius: 18px;
+    width: 100%;
+  }
+
+  .auth-admin .admin-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .auth-admin .header-brand h1 {
+    font-size: 20px;
+  }
+
+  .auth-admin .premium-caps {
+    gap: 0.3rem;
+  }
+
+  .auth-admin .premium-caps li {
+    font-size: 0.74rem;
+    padding: 0.3rem 0.65rem;
   }
 }
 
@@ -635,4 +680,16 @@
 
 .floating-corner-btn:hover .corner-icon-small {
   background: linear-gradient(135deg, rgba(219, 149, 88, 0.25), rgba(219, 149, 88, 0.1));
+}
+
+@media (max-width: 640px) {
+  .floating-admin-btn,
+  .floating-corner-btn {
+    position: static;
+    margin: 0 auto 16px auto;
+    font-size: 0.82rem;
+    padding: 0.4rem 0.85rem;
+    justify-content: center;
+    width: fit-content;
+  }
 }

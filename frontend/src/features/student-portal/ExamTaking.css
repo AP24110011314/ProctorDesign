@@ -2,6 +2,8 @@
 
 .exam-taking-container {
   height: 100vh;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: #FCF9EA;
@@ -448,6 +450,20 @@
   padding: 12px;
 }
 
+.btn-label-desktop { display: inline; }
+.btn-label-mobile { display: none; }
+
+.palette-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.palette-mobile-pill {
+  display: none;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .question-palette {
@@ -456,17 +472,139 @@
 }
 
 @media (max-width: 768px) {
+  .btn-label-desktop { display: none; }
+  .btn-label-mobile { display: inline; }
+
+  .exam-top-bar {
+    padding: 8px 12px;
+    gap: 0.5rem;
+  }
+
+  .exam-info h2 {
+    font-size: 0.95rem;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .timer {
+    min-width: auto;
+    padding: 4px 12px;
+  }
+
+  .timer-value {
+    font-size: 20px;
+  }
+
+  .timer-label {
+    font-size: 9px;
+  }
+
+  .monitoring-badge {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
   .exam-content {
     flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .question-area {
+    padding: 18px 14px;
+    overflow-y: visible;
+  }
+
+  .question-text {
+    font-size: 16px;
+    margin-bottom: 18px;
+  }
+
+  .option-item {
+    padding: 12px 14px;
   }
 
   .question-palette {
     width: 100%;
     border-left: none;
-    border-top: 1px solid #e0e0e0;
+    border-top: 1px solid #E7DCC2;
+    padding: 12px 14px;
+    overflow-y: visible;
+  }
+
+  .palette-header-row {
+    cursor: pointer;
+    padding: 4px 0;
+    margin-bottom: 0;
+  }
+
+  .palette-mobile-pill {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #F6E8D2;
+    color: #4A2E14;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 1px solid #E8CFA8;
+  }
+
+  .palette-body-wrap {
+    display: none;
+    margin-top: 12px;
+  }
+
+  .palette-open-mobile .palette-body-wrap {
+    display: block;
+    animation: fadeIn 0.2s ease-out;
   }
 
   .palette-grid {
-    grid-template-columns: repeat(8, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
+    gap: 6px;
+  }
+
+  .palette-btn {
+    width: 100%;
+    height: 38px;
+    font-size: 13px;
+  }
+
+  .exam-bottom-bar {
+    padding: 10px 12px;
+    gap: 6px;
+    position: sticky;
+    bottom: 0;
+    background: #FFFEF9;
+    border-top: 1px solid #E7DCC2;
+    box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.06);
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+
+  .exam-bottom-bar button {
+    flex: 1;
+    padding: 10px 6px;
+    font-size: 12.5px;
+    border-radius: 10px;
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .modal-content {
+    padding: 22px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .exam-info h2 {
+    max-width: 120px;
+  }
+
+  .timer-section {
+    order: 2;
   }
 }

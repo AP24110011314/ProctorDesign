@@ -45,6 +45,7 @@ export const ExamTaking = () => {
   const [error, setError] = useState('');
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [proctoringMode, setProctoringMode] = useState(null);
+  const [showPaletteMobile, setShowPaletteMobile] = useState(false);
 
   const autosaveTimer = useRef(null);
   const serverTimeTimer = useRef(null);
@@ -422,59 +423,75 @@ export const ExamTaking = () => {
         </div>
 
         {/* Question palette sidebar */}
-        <div className="question-palette">
-          <h3>Questions</h3>
-
-          <div className="palette-grid">
-            {questions.map((q, index) => {
-              const answer = answers[q.question_id];
-              let status = 'not-visited';
-              if (answer?.is_visited) {
-                status = answer?.selected_option_ids?.length > 0 || answer?.text_answer
-                  ? 'answered'
-                  : 'not-answered';
-              }
-              if (answer?.is_marked_for_review) {
-                status = 'marked';
-              }
-
-              return (
-                <button
-                  key={q.question_id}
-                  className={`palette-btn ${status} ${index === currentQuestionIndex ? 'current' : ''}`}
-                  onClick={() => navigateQuestion(index)}
-                >
-                  {index + 1}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="palette-legend">
-            <div className="legend-item">
-              <span className="legend-color answered"></span>
-              <span>Answered</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-color marked"></span>
-              <span>Marked for Review</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-color not-answered"></span>
-              <span>Not Answered</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-color not-visited"></span>
-              <span>Not Visited</span>
-            </div>
-          </div>
-
-          <button
-            className="btn-submit-exam"
-            onClick={handleSubmitClick}
+        <div className={`question-palette ${showPaletteMobile ? 'palette-open-mobile' : ''}`}>
+          <div
+            className="palette-header-row"
+            onClick={() => setShowPaletteMobile(!showPaletteMobile)}
+            role="button"
+            tabIndex={0}
+            aria-expanded={showPaletteMobile}
           >
-            Submit Exam
-          </button>
+            <h3>Questions ({getQuestionStats().answered}/{questions.length})</h3>
+            <span className="palette-mobile-pill">
+              {showPaletteMobile ? 'Hide ▲' : 'Show All ▼'}
+            </span>
+          </div>
+
+          <div className="palette-body-wrap">
+            <div className="palette-grid">
+              {questions.map((q, index) => {
+                const answer = answers[q.question_id];
+                let status = 'not-visited';
+                if (answer?.is_visited) {
+                  status = answer?.selected_option_ids?.length > 0 || answer?.text_answer
+                    ? 'answered'
+                    : 'not-answered';
+                }
+                if (answer?.is_marked_for_review) {
+                  status = 'marked';
+                }
+
+                return (
+                  <button
+                    key={q.question_id}
+                    className={`palette-btn ${status} ${index === currentQuestionIndex ? 'current' : ''}`}
+                    onClick={() => {
+                      navigateQuestion(index);
+                      setShowPaletteMobile(false);
+                    }}
+                  >
+                    {index + 1}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="palette-legend">
+              <div className="legend-item">
+                <span className="legend-color answered"></span>
+                <span>Answered</span>
+              </div>
+              <div className="legend-item">
+                <span className="legend-color marked"></span>
+                <span>Marked for Review</span>
+              </div>
+              <div className="legend-item">
+                <span className="legend-color not-answered"></span>
+                <span>Not Answered</span>
+              </div>
+              <div className="legend-item">
+                <span className="legend-color not-visited"></span>
+                <span>Not Visited</span>
+              </div>
+            </div>
+
+            <button
+              className="btn-submit-exam"
+              onClick={handleSubmitClick}
+            >
+              Submit Exam
+            </button>
+          </div>
         </div>
       </div>
 
@@ -485,14 +502,16 @@ export const ExamTaking = () => {
           onClick={() => navigateQuestion(currentQuestionIndex - 1)}
           disabled={currentQuestionIndex === 0}
         >
-          ← Previous
+          <span className="btn-label-desktop">← Previous</span>
+          <span className="btn-label-mobile">← Back</span>
         </button>
 
         <button
           className="btn-secondary"
           onClick={markForReview}
         >
-          Mark for Review & Next
+          <span className="btn-label-desktop">Mark for Review & Next</span>
+          <span className="btn-label-mobile">⚑ Review</span>
         </button>
 
         <button
@@ -504,7 +523,8 @@ export const ExamTaking = () => {
             }
           }}
         >
-          Save & Next →
+          <span className="btn-label-desktop">Save & Next →</span>
+          <span className="btn-label-mobile">Next →</span>
         </button>
       </div>
 

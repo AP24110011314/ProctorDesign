@@ -176,9 +176,37 @@
 @media (max-width: 768px) {
   .course-mgmt .page-header {
     flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .course-mgmt .page-header .btn-primary {
+    width: 100%;
+    text-align: center;
   }
 
   .course-mgmt .filters {
     grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .row-actions {
+    gap: 0.4rem;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .modal-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .course-mgmt .page-header h1 {
+    font-size: 1.4rem;
   }
 }

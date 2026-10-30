@@ -105,6 +105,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
+  min-width: 620px;
 }
 
 .questions-table th,
@@ -293,4 +294,12 @@
 /* ---- Responsive ---- */
 @media (max-width: 900px) {
   .monitor-layout, .queue-layout { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 768px) {
+  .builder-form { padding: 1.1rem 0.9rem !important; }
+  .grading-pane { padding: 1rem 0.85rem !important; }
+  .filters, .monitor-controls, .report-controls, .queue-header {
+    padding: 0.75rem 0.85rem !important;
+  }
 }

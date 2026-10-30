@@ -120,11 +120,13 @@
 }
 
 .face-oval {
-  width: 300px;
-  height: 400px;
+  width: 60%;
+  max-width: 260px;
+  height: 65%;
+  max-height: 320px;
   border: 3px dashed #57693F;
   border-radius: 50%;
-  opacity: 0.7;
+  opacity: 0.75;
 }
 
 .success-indicator {
@@ -280,19 +282,78 @@
 
 @media (max-width: 768px) {
   .system-check-card {
-    padding: 25px;
-  }
-
-  .face-oval {
-    width: 200px;
-    height: 280px;
+    padding: 24px 20px;
   }
 
   .step-actions {
     flex-direction: column;
+    gap: 10px;
   }
 
   .step-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 540px) {
+  .system-check-container {
+    padding: 14px 8px;
+  }
+
+  .system-check-card {
+    padding: 20px 14px;
+    border-radius: 16px;
+  }
+
+  .system-check-card h1 {
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+  }
+
+  .stepper {
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stepper::before {
+    left: 12%;
+    right: 12%;
+    top: 17px;
+  }
+
+  .stepper .step {
+    width: 34px;
+    height: 34px;
+    font-size: 13px;
+  }
+
+  .check-step h2 {
+    font-size: 18px;
+  }
+
+  .face-oval {
+    width: 68%;
+    height: 60%;
+    max-width: 190px;
+    max-height: 230px;
+  }
+
+  .rules-container {
+    padding: 16px 12px;
+  }
+
+  .rules-list li {
+    font-size: 13.5px;
+    padding: 10px 0;
+  }
+
+  .acknowledgement span {
+    font-size: 13.5px;
+  }
+
+  .btn-large {
+    padding: 12px 18px;
+    font-size: 14.5px;
     width: 100%;
   }
 }

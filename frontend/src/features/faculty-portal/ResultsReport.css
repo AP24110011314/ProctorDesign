@@ -97,3 +97,30 @@
   padding: 2rem;
   text-align: center;
 }
+
+@media (max-width: 768px) {
+  .results-report-container {
+    padding: 0.5rem 0;
+  }
+
+  .report-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+
+  .report-controls select,
+  .report-controls button {
+    width: 100%;
+  }
+
+  .report-table {
+    min-width: 580px;
+  }
+
+  .report-table th,
+  .report-table td {
+    padding: 0.65rem 0.6rem;
+    font-size: 0.85rem;
+  }
+}

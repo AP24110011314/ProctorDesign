@@ -143,3 +143,42 @@
   padding: 2rem;
   text-align: center;
 }
+
+@media (max-width: 900px) {
+  .grading-queue-container {
+    padding: 0.5rem 0;
+  }
+
+  .queue-layout {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .queue-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+
+  .queue-header select {
+    width: 100%;
+  }
+
+  .suggest-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .suggest-row button {
+    width: 100%;
+  }
+
+  .grading-pane {
+    padding: 1rem !important;
+  }
+
+  .grading-pane form button {
+    width: 100%;
+  }
+}
