@@ -15,7 +15,7 @@
  * - Results & Integrity Reports (scores, CSV/PDF mock export, voiding)
  */
 
-const STORAGE_KEY = 'proctox_demo_store_v1';
+const STORAGE_KEY = 'proctox_demo_store_v2';
 
 const INITIAL_STORE = {
   users: [
@@ -327,16 +327,65 @@ const INITIAL_STORE = {
   ],
 };
 
+const ensureSeedUsers = (store) => {
+  if (!store || typeof store !== 'object') store = {};
+  if (!Array.isArray(store.users)) store.users = [];
+  if (!store.passwords || typeof store.passwords !== 'object') store.passwords = {};
+
+  // Guarantee the 3 documented credentials exist in the store with active status
+  INITIAL_STORE.users.forEach((defUser) => {
+    const existingIndex = store.users.findIndex(
+      (u) =>
+        (u.email && u.email.toLowerCase() === defUser.email.toLowerCase()) ||
+        (u.username && u.username.toLowerCase() === defUser.username.toLowerCase())
+    );
+    if (existingIndex >= 0) {
+      store.users[existingIndex] = {
+        ...defUser,
+        ...store.users[existingIndex],
+        role: defUser.role,
+        is_superuser: defUser.is_superuser,
+        is_active: true,
+      };
+    } else {
+      store.users.push({ ...defUser });
+    }
+  });
+
+  // Guarantee passwords are saved for both email and username formats
+  Object.assign(store.passwords, INITIAL_STORE.passwords);
+
+  // Guarantee sample courses exist
+  if (!Array.isArray(store.courses) || store.courses.length === 0) {
+    store.courses = JSON.parse(JSON.stringify(INITIAL_STORE.courses));
+  }
+
+  // Guarantee questions and exams exist
+  if (!Array.isArray(store.questions) || store.questions.length === 0) {
+    store.questions = JSON.parse(JSON.stringify(INITIAL_STORE.questions));
+  }
+  if (!Array.isArray(store.exams) || store.exams.length === 0) {
+    store.exams = JSON.parse(JSON.stringify(INITIAL_STORE.exams));
+  }
+
+  return store;
+};
+
 const getStore = () => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    let raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_STORE));
-      return JSON.parse(JSON.stringify(INITIAL_STORE));
+      // Check for v1 migration
+      const v1 = localStorage.getItem('proctox_demo_store_v1');
+      if (v1) raw = v1;
     }
-    return JSON.parse(raw);
+    let store = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(INITIAL_STORE));
+    store = ensureSeedUsers(store);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    return store;
   } catch {
-    return JSON.parse(JSON.stringify(INITIAL_STORE));
+    const store = ensureSeedUsers(JSON.parse(JSON.stringify(INITIAL_STORE)));
+    return store;
   }
 };
 
@@ -376,7 +425,9 @@ export const activateDemoMode = () => {
 export const handleMockRequest = async (config) => {
   const store = getStore();
   const method = (config.method || 'get').toLowerCase();
-  const url = (config.url || '').replace(/^https?:\/\/[^/]+/, '').replace(/^\/api/, '');
+  const rawUrl = (config.url || '').replace(/^https?:\/\/[^/]+/, '').replace(/^\/api/, '');
+  const cleanPath = rawUrl.split('?')[0];
+  const url = cleanPath.endsWith('/') ? cleanPath : `${cleanPath}/`;
 
   const parseBody = () => {
     if (!config.data) return {};
@@ -402,9 +453,9 @@ export const handleMockRequest = async (config) => {
   });
 
   const err = (message, status = 400, code = 'error') => {
-    const error = new Error(message);
+    const error = new Error(typeof message === 'string' ? message : JSON.stringify(message));
     error.response = {
-      data: { error: { code, message } },
+      data: typeof message === 'object' ? message : { error: { code, message } },
       status,
       statusText: 'Bad Request',
       headers: {},
@@ -416,23 +467,54 @@ export const handleMockRequest = async (config) => {
   // 1. Auth: Login
   if (url === '/auth/login/' && method === 'post') {
     const identifier = String(body.email || body.username || '').trim().toLowerCase();
-    const password = String(body.password || '');
+    const password = String(body.password || '').trim();
 
-    // Check against store users
-    const user = store.users.find(
-      (u) => u.email.toLowerCase() === identifier || u.username.toLowerCase() === identifier
+    // Recognized demo accounts & their exact credentials
+    const DEMO_CREDENTIALS = {
+      'admin': 'AdminPass123!',
+      'admin@proctox.edu': 'AdminPass123!',
+      'faculty': 'FacultyPass123!',
+      'faculty@proctox.edu': 'FacultyPass123!',
+      'student': 'StudentPass123!',
+      'student@proctox.edu': 'StudentPass123!',
+    };
+
+    let user = store.users.find(
+      (u) =>
+        (u.email && u.email.toLowerCase() === identifier) ||
+        (u.username && u.username.toLowerCase() === identifier)
     );
 
-    const expectedPass = store.passwords[identifier] || user?.password || 'AdminPass123!';
+    // If identifier is one of the standard demo accounts, ensure user object exists
+    if (!user && DEMO_CREDENTIALS[identifier]) {
+      const def = INITIAL_STORE.users.find(
+        (u) =>
+          u.email.toLowerCase() === identifier ||
+          u.username.toLowerCase() === identifier
+      );
+      if (def) {
+        user = { ...def };
+        store.users.push(user);
+        saveStore(store);
+      }
+    }
 
-    if (!user || (password !== expectedPass && password !== user.password && password !== 'AdminPass123!' && password !== 'FacultyPass123!' && password !== 'StudentPass123!')) {
+    const expectedPass = DEMO_CREDENTIALS[identifier] || store.passwords[identifier] || user?.password;
+    const isValidPass =
+      (expectedPass && password === expectedPass) ||
+      (user?.password && password === user.password) ||
+      (password === 'AdminPass123!' && (user?.role === 'admin' || user?.is_superuser)) ||
+      (password === 'FacultyPass123!' && user?.role === 'faculty') ||
+      (password === 'StudentPass123!' && user?.role === 'student');
+
+    if (!user || !isValidPass) {
       return err('Invalid credentials. Check email and password.', 401, 'invalid_credentials');
     }
 
     activateDemoMode();
 
     return ok({
-      message: 'Login successful (Demo Mode)',
+      message: 'Login successful',
       user,
       tokens: {
         access: `demo_jwt_access_token_${user.role}_${Date.now()}`,
