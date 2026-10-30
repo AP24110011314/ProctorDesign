@@ -268,59 +268,115 @@
   color: #242E1C;
 }
 
-/* Staff Quick Demo Fill box on Mission Control */
+/* Staff Quick Demo Fill box on Mission Control — matches Student Login UI */
 .admin-helper {
-  margin: 0.5rem 0 0.65rem;
-  padding: 0.65rem 0.85rem;
-  background: #1F2718 !important; /* solid deep obsidian-sage command surface */
-  border: 1.5px solid #DB9558 !important; /* crisp caramel-gold border */
-  border-radius: 12px;
-  box-shadow: 0 4px 14px rgba(31, 39, 24, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  margin: 0.35rem 0 0.45rem;
+  padding: 0.45rem 0.75rem;
+  background: linear-gradient(180deg, #FFFDF6 0%, #FAF4E1 100%);
+  border: 1px solid var(--caramel-border, #E8CFA8);
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(74, 46, 20, 0.05);
 }
 
 .admin-helper .demo-helper-label {
-  color: #DB9558 !important; /* vivid high-contrast caramel gold */
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  color: var(--caramel-ink, #4A2E14);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.25rem;
 }
 
 .admin-helper .demo-helper-chips {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   width: 100%;
 }
 
-.premium-chip {
+.demo-admin-chip {
   flex: 1;
-  padding: 0.45rem 0.65rem;
-  background: rgba(219, 149, 88, 0.22);
-  border: 1.5px solid rgba(219, 149, 88, 0.7);
-  color: #FFFFFF !important; /* high-contrast crystal-clear pure white */
-  font-size: 0.82rem;
+  padding: 0.42rem 0.65rem;
+  background: var(--caramel-ghost, #FBF3E2);
+  border: 1px solid var(--caramel-border, #E8CFA8);
+  color: var(--caramel-ink, #4A2E14);
+  font-size: 0.78rem;
   font-weight: 750;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.3rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1px 2px rgba(74, 46, 20, 0.05);
+}
+
+.demo-admin-chip:hover {
+  background: #F3E5CC;
+  border-color: var(--caramel, #DB9558);
+  color: #38200B;
+  transform: translateY(-1px);
+}
+
+.demo-admin-chip:active {
+  transform: translateY(0);
+}
+
+.demo-faculty-chip {
+  flex: 1;
+  padding: 0.42rem 0.65rem;
+  background: var(--sage-ghost, #F1F5EA);
+  border: 1px solid var(--sage-border, #C4D1B4);
+  color: var(--sage-ink, #2F3A26);
+  font-size: 0.78rem;
+  font-weight: 750;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  box-shadow: 0 1px 2px rgba(87, 105, 63, 0.05);
+}
+
+.demo-faculty-chip:hover {
+  background: #E4ECDA;
+  border-color: #A9BC94;
+  color: #242E1C;
+  transform: translateY(-1px);
+}
+
+.demo-faculty-chip:active {
+  transform: translateY(0);
+}
+
+.premium-chip {
+  flex: 1;
+  padding: 0.42rem 0.65rem;
+  background: #fff;
+  border: 1px solid var(--border-strong, #D9C9A3);
+  color: var(--ink, #2E2A23);
+  font-size: 0.78rem;
+  font-weight: 750;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  box-shadow: 0 1px 2px rgba(74, 46, 20, 0.05);
 }
 
 .premium-chip:hover {
-  background: #DB9558 !important;
-  border-color: #DB9558 !important;
-  color: #171410 !important; /* dark readable text on vibrant gold fill */
+  background: var(--caramel-ghost, #FBF3E2);
+  border-color: var(--caramel, #DB9558);
+  color: var(--caramel-ink, #4A2E14);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(219, 149, 88, 0.4);
-  text-shadow: none;
 }
 
 .premium-chip:active {

@@ -178,14 +178,14 @@ export const AdminLogin = () => {
             <div className="demo-helper-chips">
               <button
                 type="button"
-                className="demo-chip-btn premium-chip"
+                className="demo-chip-btn demo-admin-chip"
                 onClick={() => setFormData({ email: 'admin@proctox.edu', password: 'AdminPass123!' })}
               >
                 ⚡ Admin
               </button>
               <button
                 type="button"
-                className="demo-chip-btn premium-chip"
+                className="demo-chip-btn demo-faculty-chip"
                 onClick={() => setFormData({ email: 'faculty@proctox.edu', password: 'FacultyPass123!' })}
               >
                 ⚡ Faculty
