@@ -152,6 +152,13 @@ h2 {
   gap: 0.5rem;
 }
 
+.system-overview-container .table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 14px;
+}
+
 .overview-table {
   width: 100%;
   border-collapse: separate;
@@ -332,5 +339,12 @@ h2 {
 
   .role-counts-pill {
     font-size: 1rem;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 0.35rem 0.5rem;
+  }
+
+  .role-pill-sep {
+    display: none;
   }
 }

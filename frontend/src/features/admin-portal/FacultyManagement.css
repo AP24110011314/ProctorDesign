@@ -158,6 +158,7 @@
 
 .faculty-table {
   width: 100%;
+  min-width: 680px;
   border-collapse: collapse;
   text-align: left;
   font-size: 0.9rem;
@@ -840,5 +841,40 @@
 
   .creds-actions button {
     width: 100%;
+  }
+
+  .row-actions-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+  }
+
+  .table-action-link,
+  .table-action-btn {
+    text-align: center;
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .faculty-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .faculty-modal {
+    padding: 1.25rem 1rem;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+
+  .course-choice-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .current-instructor-tag {
+    align-self: flex-start;
   }
 }

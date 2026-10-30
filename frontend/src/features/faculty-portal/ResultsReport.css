@@ -98,6 +98,12 @@
   text-align: center;
 }
 
+.results-report-container .table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 @media (max-width: 768px) {
   .results-report-container {
     padding: 0.25rem 0;
