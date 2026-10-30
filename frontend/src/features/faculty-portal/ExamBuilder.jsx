@@ -220,6 +220,27 @@ export const ExamBuilder = ({ examId = null }) => {
       {error && <div className="error-message">{error}</div>}
       {success && <div className="notice-message" style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#16a34a', borderColor: 'rgba(34, 197, 94, 0.2)', marginBottom: '1.5rem' }}>{success}</div>}
 
+      {!loading && courses.length === 0 && (
+        <div
+          className="alert-banner alert-warning"
+          style={{
+            margin: '0.75rem 0 1.5rem',
+            padding: '0.9rem 1.1rem',
+            background: 'var(--caramel-ghost, #FBF3E2)',
+            border: '1px solid var(--caramel-border, #E8CFA8)',
+            borderRadius: '12px',
+            color: 'var(--caramel-ink, #4A2E14)',
+          }}
+          role="alert"
+        >
+          <strong>⚠️ No courses assigned to your account yet.</strong>
+          <p style={{ margin: '0.35rem 0 0', fontSize: '0.88rem', lineHeight: '1.45' }}>
+            Exam authoring requires at least one assigned course under your academic jurisdiction.
+            Please reach out to an administrator in Mission Control to assign courses to your faculty account.
+          </p>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="builder-form">
         {/* Step 1: Basic Info */}
         {step === 1 && (

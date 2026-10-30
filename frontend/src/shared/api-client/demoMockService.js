@@ -525,7 +525,29 @@ export const handleMockRequest = async (config) => {
   }
 
   // 6. Admin Courses
-  if ((url.startsWith('/admin/courses/') || url.startsWith('/courses/')) && method === 'get') {
+  if (url.startsWith('/admin/courses/') && method === 'get') {
+    return ok({ results: store.courses });
+  }
+
+  if (url.startsWith('/courses/') && method === 'get') {
+    let authUser = null;
+    try {
+      const raw = localStorage.getItem('auth_user');
+      if (raw) authUser = JSON.parse(raw);
+    } catch {}
+
+    if (authUser?.role === 'faculty') {
+      const displayName = `${authUser.first_name || ''} ${authUser.last_name || ''}`.trim() || authUser.username;
+      const facultyCourses = store.courses.filter(
+        (c) =>
+          c.faculty === authUser.id ||
+          String(c.faculty) === String(authUser.id) ||
+          (c.faculty_name && c.faculty_name.toLowerCase() === displayName.toLowerCase()) ||
+          (c.faculty_email && c.faculty_email.toLowerCase() === (authUser.email || '').toLowerCase())
+      );
+      // If none explicitly matched by ID or name, fallback to courses so demo always works
+      return ok({ results: facultyCourses.length > 0 ? facultyCourses : store.courses });
+    }
     return ok({ results: store.courses });
   }
 
@@ -616,6 +638,58 @@ export const handleMockRequest = async (config) => {
         is_active: true,
         created_at: new Date().toISOString(),
       };
+
+      const displayName = `${newFaculty.first_name} ${newFaculty.last_name}`.trim() || newFaculty.username;
+      const assignedCodes = [];
+      const courseDetails = [];
+
+      // Link selected existing courses
+      const rawCourseIds = Array.isArray(body.course_ids) ? body.course_ids : (body.course_id ? [body.course_id] : []);
+      if (rawCourseIds.length > 0) {
+        store.courses.forEach((c) => {
+          if (rawCourseIds.includes(c.id) || rawCourseIds.includes(String(c.id)) || rawCourseIds.includes(c.code)) {
+            c.faculty = newFaculty.id;
+            c.faculty_name = displayName;
+            c.faculty_email = newFaculty.email;
+            c.updated_at = new Date().toISOString();
+            assignedCodes.push(c.code);
+            courseDetails.push({ id: c.id, code: c.code, name: c.name });
+          }
+        });
+      }
+
+      // Link or create new course if provided
+      const newCode = (body.new_course_code || '').trim().toUpperCase();
+      const newName = (body.new_course_name || '').trim();
+      if (newCode) {
+        const existingC = store.courses.find((c) => (c.code || '').toUpperCase() === newCode);
+        if (existingC) {
+          existingC.faculty = newFaculty.id;
+          existingC.faculty_name = displayName;
+          existingC.faculty_email = newFaculty.email;
+          if (!assignedCodes.includes(existingC.code)) {
+            assignedCodes.push(existingC.code);
+            courseDetails.push({ id: existingC.id, code: existingC.code, name: existingC.name });
+          }
+        } else {
+          const newCourse = {
+            id: Date.now() + 1,
+            code: newCode,
+            name: newName || newCode,
+            description: (body.new_course_description || '').trim(),
+            faculty: newFaculty.id,
+            faculty_name: displayName,
+            faculty_email: newFaculty.email,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          store.courses.unshift(newCourse);
+          assignedCodes.push(newCourse.code);
+          courseDetails.push({ id: newCourse.id, code: newCourse.code, name: newCourse.name });
+        }
+      }
+
       store.users.push(newFaculty);
       saveStore(store);
 
@@ -625,13 +699,49 @@ export const handleMockRequest = async (config) => {
         email: newFaculty.email,
         first_name: newFaculty.first_name,
         last_name: newFaculty.last_name,
-        display_name: `${newFaculty.first_name} ${newFaculty.last_name}`.trim() || newFaculty.username,
+        display_name: displayName,
         role: 'faculty',
         is_active: true,
         created_at: newFaculty.created_at,
-        course_count: 0,
-        courses: [],
+        course_count: assignedCodes.length,
+        courses: assignedCodes,
+        course_details: courseDetails,
       }, 201);
+    }
+
+    if (method === 'patch') {
+      const facultyId = body.faculty_id;
+      const targetUser = store.users.find((u) => u.id === facultyId || String(u.id) === String(facultyId));
+      if (!targetUser) return err('Faculty member not found', 404);
+
+      const displayName = `${targetUser.first_name || ''} ${targetUser.last_name || ''}`.trim() || targetUser.username;
+      const rawCourseIds = Array.isArray(body.course_ids) ? body.course_ids : [];
+      const updatedCodes = [];
+      const courseDetails = [];
+
+      store.courses.forEach((c) => {
+        const isSelected = rawCourseIds.includes(c.id) || rawCourseIds.includes(String(c.id)) || rawCourseIds.includes(c.code);
+        if (isSelected) {
+          c.faculty = targetUser.id;
+          c.faculty_name = displayName;
+          c.faculty_email = targetUser.email;
+          updatedCodes.push(c.code);
+          courseDetails.push({ id: c.id, code: c.code, name: c.name });
+        } else if (c.faculty === targetUser.id) {
+          c.faculty = null;
+          c.faculty_name = '';
+        }
+      });
+      saveStore(store);
+      return ok({
+        id: targetUser.id,
+        username: targetUser.username,
+        email: targetUser.email,
+        display_name: displayName,
+        course_count: updatedCodes.length,
+        courses: updatedCodes,
+        course_details: courseDetails,
+      });
     }
   }
 

@@ -308,20 +308,42 @@ class AdminCourseTests(TestCase):
             'password': 'SecurePass123!',
             'first_name': 'Alan',
             'last_name': 'Turing',
+            'course_ids': [self.course.id],
+            'new_course_code': 'CS808',
+            'new_course_name': 'Theory of Computation',
         }
         response = self.client.post('/api/admin/faculty/', payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['username'], 'newprof')
         self.assertEqual(response.data['role'], 'faculty')
+        self.assertIn('CS101', response.data['courses'])
+        self.assertIn('CS808', response.data['courses'])
 
         new_user = User.objects.get(username='newprof')
         self.assertEqual(new_user.role, User.Role.FACULTY)
         self.assertTrue(new_user.check_password('SecurePass123!'))
 
+        # Check courses linked
+        self.course.refresh_from_db()
+        self.assertEqual(self.course.faculty, new_user)
+        c808 = Course.objects.get(code='CS808')
+        self.assertEqual(c808.faculty, new_user)
+
         # Verify audit log recorded
         entry = AuditLog.objects.filter(action=AuditLog.Action.FACULTY_CREATE, target_id=new_user.id).first()
         self.assertIsNotNone(entry)
         self.assertEqual(entry.actor, self.admin)
+
+    def test_admin_patch_faculty_courses(self):
+        self.client.force_authenticate(user=self.admin)
+        res = self.client.patch('/api/admin/faculty/', {
+            'faculty_id': self.faculty2.id,
+            'course_ids': [self.course.id],
+        }, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('CS101', res.data['courses'])
+        self.course.refresh_from_db()
+        self.assertEqual(self.course.faculty, self.faculty2)
 
     def test_admin_create_faculty_validations(self):
         self.client.force_authenticate(user=self.admin)

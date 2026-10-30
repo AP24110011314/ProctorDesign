@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { adminService } from '../../shared/api-client/adminService';
 import './FacultyManagement.css';
 
@@ -8,7 +8,8 @@ import './FacultyManagement.css';
  * Allows platform administrators to:
  * - View all registered faculty members & instructor accounts
  * - Inspect assigned courses per faculty
- * - Provision new faculty accounts with secure initial credentials
+ * - Provision new faculty accounts with initial credentials AND assign their courses immediately
+ * - Reassign or edit courses for existing faculty members
  * - Copy provisioned credentials for instructor onboarding
  */
 
@@ -19,6 +20,11 @@ const emptyForm = {
   email: '',
   password: '',
   phone: '',
+  course_ids: [],
+  create_new_course: false,
+  new_course_code: '',
+  new_course_name: '',
+  new_course_description: '',
 };
 
 const generateSecurePassword = () => {
@@ -31,13 +37,14 @@ const generateSecurePassword = () => {
 };
 
 export const FacultyManagement = () => {
-  const navigate = useNavigate();
   const [faculty, setFaculty] = useState([]);
+  const [availableCourses, setAvailableCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [search, setSearch] = useState('');
 
+  // Add Faculty Modal
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
   const [formErrors, setFormErrors] = useState({});
@@ -46,11 +53,17 @@ export const FacultyManagement = () => {
   const [provisionedCreds, setProvisionedCreds] = useState(null);
   const [copied, setCopied] = useState(false);
 
+  // Edit Courses Modal (for existing faculty)
+  const [editingFacultyCourses, setEditingFacultyCourses] = useState(null);
+  const [selectedCourseIds, setSelectedCourseIds] = useState([]);
+  const [savingCourses, setSavingCourses] = useState(false);
+
   const modalRef = useRef(null);
   const firstInputRef = useRef(null);
 
   useEffect(() => {
     loadFaculty();
+    loadCourses();
   }, []);
 
   useEffect(() => {
@@ -76,10 +89,20 @@ export const FacultyManagement = () => {
     }
   };
 
+  const loadCourses = async () => {
+    try {
+      const data = await adminService.listCourses({ is_active: 'true' });
+      setAvailableCourses(Array.isArray(data) ? data : data.results || []);
+    } catch (e) {
+      console.error('Failed to load courses', e);
+    }
+  };
+
   const openCreateModal = () => {
     setFormData({
       ...emptyForm,
       password: generateSecurePassword(),
+      course_ids: availableCourses.length > 0 ? [availableCourses[0].id] : [],
     });
     setFormErrors({});
     setShowPassword(true);
@@ -95,10 +118,26 @@ export const FacultyManagement = () => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (formErrors[name]) {
-      setFormErrors((prev) => ({ ...prev, [name]: '' }));
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+    if (formErrors[name] || formErrors.courses) {
+      setFormErrors((prev) => ({ ...prev, [name]: '', courses: '' }));
+    }
+  };
+
+  const handleCourseCheckboxToggle = (courseId) => {
+    setFormData((prev) => {
+      const exists = prev.course_ids.includes(courseId);
+      const updated = exists
+        ? prev.course_ids.filter((id) => id !== courseId)
+        : [...prev.course_ids, courseId];
+      return { ...prev, course_ids: updated };
+    });
+    if (formErrors.courses) {
+      setFormErrors((prev) => ({ ...prev, courses: '' }));
     }
   };
 
@@ -122,6 +161,23 @@ export const FacultyManagement = () => {
       errs.password = 'Password must be at least 8 characters';
     }
 
+    // Require at least one course assignment
+    const hasExistingCourse = formData.course_ids.length > 0;
+    const hasNewCourse = formData.create_new_course && formData.new_course_code.trim();
+
+    if (!hasExistingCourse && !hasNewCourse) {
+      errs.courses = 'Please assign at least one course to grant this instructor question bank and exam building privileges.';
+    }
+
+    if (formData.create_new_course) {
+      if (!formData.new_course_code.trim()) {
+        errs.new_course_code = 'Course code is required (e.g. CS301)';
+      }
+      if (!formData.new_course_name.trim()) {
+        errs.new_course_name = 'Course title is required';
+      }
+    }
+
     setFormErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -141,19 +197,28 @@ export const FacultyManagement = () => {
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
         phone: formData.phone.trim(),
+        course_ids: formData.course_ids,
+        new_course_code: formData.create_new_course ? formData.new_course_code.trim().toUpperCase() : '',
+        new_course_name: formData.create_new_course ? formData.new_course_name.trim() : '',
+        new_course_description: formData.create_new_course ? formData.new_course_description.trim() : '',
       };
 
       const created = await adminService.createFaculty(payload);
+      const assignedCodes = created.courses || [];
       
       setProvisionedCreds({
         name: created.display_name || `${payload.first_name} ${payload.last_name}`.trim() || payload.username,
         username: payload.username,
         email: payload.email,
         password: payload.password,
+        courses: assignedCodes,
       });
 
-      setNotice(`Faculty account provisioned successfully for ${created.display_name || payload.username}`);
+      setNotice(
+        `Faculty account provisioned successfully for ${created.display_name || payload.username} with course(s): ${assignedCodes.join(', ') || 'None'}`
+      );
       await loadFaculty();
+      await loadCourses();
     } catch (err) {
       const respData = err.response?.data;
       if (respData && typeof respData === 'object') {
@@ -182,10 +247,37 @@ export const FacultyManagement = () => {
 
   const handleCopyCredentials = () => {
     if (!provisionedCreds) return;
-    const text = `ProctoX Faculty Portal Credentials:\nEmail / Username: ${provisionedCreds.email} (${provisionedCreds.username})\nTemporary Password: ${provisionedCreds.password}\nPortal Link: ${window.location.origin}/admin/login`;
+    const coursesStr = provisionedCreds.courses?.length > 0 ? provisionedCreds.courses.join(', ') : 'None assigned';
+    const text = `ProctoX Faculty Portal Credentials:\nEmail / Username: ${provisionedCreds.email} (${provisionedCreds.username})\nTemporary Password: ${provisionedCreds.password}\nAssigned Courses: ${coursesStr}\nPortal Link: ${window.location.origin}/admin/login`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 3000);
+  };
+
+  // Manage courses for existing faculty
+  const openEditCourses = (fac) => {
+    setEditingFacultyCourses(fac);
+    const currentCodes = fac.courses || [];
+    const initialIds = availableCourses
+      .filter((c) => currentCodes.includes(c.code))
+      .map((c) => c.id);
+    setSelectedCourseIds(initialIds);
+  };
+
+  const handleSaveCoursesForFaculty = async () => {
+    if (!editingFacultyCourses) return;
+    try {
+      setSavingCourses(true);
+      await adminService.assignFacultyCourses(editingFacultyCourses.id, selectedCourseIds);
+      setNotice(`Course assignments updated successfully for ${editingFacultyCourses.display_name}`);
+      setEditingFacultyCourses(null);
+      await loadFaculty();
+      await loadCourses();
+    } catch (err) {
+      setError(err.response?.data?.error?.message || 'Failed to update course assignments');
+    } finally {
+      setSavingCourses(false);
+    }
   };
 
   // Filtered faculty list
@@ -209,7 +301,7 @@ export const FacultyManagement = () => {
         <div>
           <h1>Faculty Directory &amp; Provisioning</h1>
           <p className="page-subtitle">
-            Manage institutional faculty accounts, provision new instructors, and track course assignments.
+            Manage institutional faculty accounts, provision new instructors, and assign courses to grant exam privileges.
           </p>
         </div>
         <button
@@ -254,7 +346,7 @@ export const FacultyManagement = () => {
       {/* Search and Filters */}
       <div className="faculty-search-bar">
         <div className="search-input-wrap">
-          <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
@@ -332,7 +424,9 @@ export const FacultyManagement = () => {
                             ))}
                           </div>
                         ) : (
-                          <span className="no-courses-text">No courses assigned</span>
+                          <span className="no-courses-warning" title="No courses assigned — instructor cannot build exams until assigned">
+                            ⚠️ Unassigned
+                          </span>
                         )}
                       </td>
                       <td>
@@ -341,13 +435,23 @@ export const FacultyManagement = () => {
                         </span>
                       </td>
                       <td>
-                        <Link
-                          to="/admin/courses"
-                          className="table-action-link"
-                          title="Assign courses in Course Management"
-                        >
-                          Manage Courses →
-                        </Link>
+                        <div className="row-actions-group">
+                          <button
+                            type="button"
+                            className="table-action-link"
+                            onClick={() => openEditCourses(item)}
+                            title="Assign or change courses for this instructor"
+                          >
+                            ✎ Assign Courses
+                          </button>
+                          <Link
+                            to="/admin/courses"
+                            className="table-action-link secondary-link"
+                            title="Open Course Management"
+                          >
+                            Courses →
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -391,7 +495,7 @@ export const FacultyManagement = () => {
                 <div className="creds-badge-circle" aria-hidden="true">✓</div>
                 <h3>Instructor Account Ready</h3>
                 <p className="creds-intro">
-                  The faculty account for <strong>{provisionedCreds.name}</strong> has been created.
+                  The faculty account for <strong>{provisionedCreds.name}</strong> has been created with full faculty privileges.
                   Share these credentials with the instructor so they can access Mission Control.
                 </p>
 
@@ -407,6 +511,16 @@ export const FacultyManagement = () => {
                   <div className="creds-row">
                     <span className="creds-label">Initial Password:</span>
                     <code className="creds-val">{provisionedCreds.password}</code>
+                  </div>
+                  <div className="creds-row">
+                    <span className="creds-label">Assigned Courses:</span>
+                    <span className="creds-val courses-tag-group">
+                      {provisionedCreds.courses?.length > 0
+                        ? provisionedCreds.courses.map((c) => (
+                            <span key={c} className="course-code-pill">{c}</span>
+                          ))
+                        : 'None'}
+                    </span>
                   </div>
                   <div className="creds-row">
                     <span className="creds-label">Portal:</span>
@@ -434,7 +548,7 @@ export const FacultyManagement = () => {
             ) : (
               <form onSubmit={handleSubmit} className="faculty-form">
                 <p className="form-helper-text">
-                  Provision an official instructor account. The new faculty member can log in via Mission Control to create questions, manage exams, and evaluate student submissions.
+                  Provision an official instructor account and assign their academic scope. Assigned courses grant the instructor full privileges to create questions, schedule exams, and grade student submissions.
                 </p>
 
                 <div className="form-row two-cols">
@@ -551,6 +665,119 @@ export const FacultyManagement = () => {
                   )}
                 </div>
 
+                {/* Course Privileges & Academic Scope Section */}
+                <div className="course-assignment-section">
+                  <div className="course-section-header">
+                    <label className="section-title">
+                      Assigned Course(s) <span className="req">*</span>
+                    </label>
+                    <span className="scope-badge">Faculty Privileges</span>
+                  </div>
+                  <p className="course-section-hint">
+                    Select existing course(s) or add a new one. This grants the faculty member ownership to create questions, manage exams, and view attempts.
+                  </p>
+
+                  {formErrors.courses && (
+                    <div className="field-error course-error-banner" role="alert">
+                      {formErrors.courses}
+                    </div>
+                  )}
+
+                  {/* Existing courses selection */}
+                  {availableCourses.length > 0 ? (
+                    <div className="course-checkbox-list">
+                      {availableCourses.map((c) => {
+                        const isChecked = formData.course_ids.includes(c.id);
+                        return (
+                          <label
+                            key={c.id}
+                            className={`course-choice-card ${isChecked ? 'selected' : ''}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => handleCourseCheckboxToggle(c.id)}
+                              disabled={saving}
+                            />
+                            <div className="course-choice-text">
+                              <div className="course-choice-header">
+                                <span className="choice-code">{c.code}</span>
+                                {c.faculty_name && (
+                                  <span className="current-instructor-tag">
+                                    Current: {c.faculty_name}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="choice-name">{c.name}</span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="no-existing-courses">No courses currently exist in the system.</p>
+                  )}
+
+                  {/* Option to create a new course directly */}
+                  <div className="new-course-toggle-box">
+                    <label className="toggle-checkbox-label">
+                      <input
+                        type="checkbox"
+                        name="create_new_course"
+                        checked={formData.create_new_course}
+                        onChange={handleInputChange}
+                        disabled={saving}
+                      />
+                      <span className="toggle-label-text">
+                        + Create and assign a brand new course for this instructor
+                      </span>
+                    </label>
+
+                    {formData.create_new_course && (
+                      <div className="new-course-inline-form">
+                        <div className="form-row two-cols">
+                          <div className="form-group">
+                            <label htmlFor="new_course_code">
+                              Course Code <span className="req">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              id="new_course_code"
+                              name="new_course_code"
+                              value={formData.new_course_code}
+                              onChange={handleInputChange}
+                              placeholder="e.g. CS301"
+                              disabled={saving}
+                              className={formErrors.new_course_code ? 'input-error' : ''}
+                            />
+                            {formErrors.new_course_code && (
+                              <span className="field-error">{formErrors.new_course_code}</span>
+                            )}
+                          </div>
+                          <div className="form-group">
+                            <label htmlFor="new_course_name">
+                              Course Title <span className="req">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              id="new_course_name"
+                              name="new_course_name"
+                              value={formData.new_course_name}
+                              onChange={handleInputChange}
+                              placeholder="e.g. Advanced Operating Systems"
+                              disabled={saving}
+                              className={formErrors.new_course_name ? 'input-error' : ''}
+                            />
+                            {formErrors.new_course_name && (
+                              <span className="field-error">{formErrors.new_course_name}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <div className="form-group">
                   <label htmlFor="phone">Phone Number (Optional)</label>
                   <input
@@ -578,11 +805,100 @@ export const FacultyManagement = () => {
                     className="btn-primary"
                     disabled={saving}
                   >
-                    {saving ? 'Provisioning...' : 'Provision Faculty Account'}
+                    {saving ? 'Provisioning...' : 'Provision Faculty & Assign Courses'}
                   </button>
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Courses Modal for Existing Faculty */}
+      {editingFacultyCourses && (
+        <div className="modal-backdrop" onClick={() => setEditingFacultyCourses(null)} role="presentation">
+          <div
+            className="modal faculty-modal course-assign-modal"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-assign-title"
+          >
+            <div className="modal-header">
+              <div>
+                <span className="modal-badge">Course Management</span>
+                <h2 id="modal-assign-title">
+                  Assign Courses: {editingFacultyCourses.display_name}
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setEditingFacultyCourses(null)}
+                aria-label="Close dialog"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="form-helper-text">
+              Select which course(s) <strong>{editingFacultyCourses.display_name}</strong> ({editingFacultyCourses.email}) is authorized to manage. Assigned courses grant question bank, exam authoring, and grading privileges.
+            </p>
+
+            <div className="course-checkbox-list">
+              {availableCourses.map((c) => {
+                const isSelected = selectedCourseIds.includes(c.id);
+                return (
+                  <label
+                    key={c.id}
+                    className={`course-choice-card ${isSelected ? 'selected' : ''}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => {
+                        setSelectedCourseIds((prev) =>
+                          prev.includes(c.id)
+                            ? prev.filter((id) => id !== c.id)
+                            : [...prev, c.id]
+                        );
+                      }}
+                      disabled={savingCourses}
+                    />
+                    <div className="course-choice-text">
+                      <div className="course-choice-header">
+                        <span className="choice-code">{c.code}</span>
+                        {c.faculty_name && c.faculty_name !== editingFacultyCourses.display_name && (
+                          <span className="current-instructor-tag">
+                            Current: {c.faculty_name}
+                          </span>
+                        )}
+                      </div>
+                      <span className="choice-name">{c.name}</span>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setEditingFacultyCourses(null)}
+                disabled={savingCourses}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleSaveCoursesForFaculty}
+                disabled={savingCourses}
+              >
+                {savingCourses ? 'Updating...' : 'Save Course Assignments'}
+              </button>
+            </div>
           </div>
         </div>
       )}

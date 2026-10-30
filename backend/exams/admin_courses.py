@@ -202,8 +202,12 @@ class AdminFacultyOptionsView(APIView):
                 'is_active': u.is_active,
                 'created_at': u.date_joined,
                 'phone': getattr(u, 'phone', ''),
-                'course_count': u.course_set.count() if hasattr(u, 'course_set') else 0,
-                'courses': list(u.course_set.values_list('code', flat=True)) if hasattr(u, 'course_set') else [],
+                'course_count': u.courses.count() if hasattr(u, 'courses') else 0,
+                'courses': list(u.courses.values_list('code', flat=True)) if hasattr(u, 'courses') else [],
+                'course_details': [
+                    {'id': c.id, 'code': c.code, 'name': c.name}
+                    for c in u.courses.filter(is_active=True)
+                ] if hasattr(u, 'courses') else [],
             }
             for u in faculty
         ])
@@ -238,6 +242,21 @@ class AdminFacultyOptionsView(APIView):
         elif len(password) < 8:
             errors['password'] = ['Password must be at least 8 characters.']
 
+        # Course assignment validation
+        raw_course_ids = data.get('course_ids') or []
+        if isinstance(raw_course_ids, (int, str)):
+            raw_course_ids = [raw_course_ids]
+
+        new_code = str(data.get('new_course_code') or '').strip().upper()
+        new_name = str(data.get('new_course_name') or '').strip()
+        new_desc = str(data.get('new_course_description') or '').strip()
+
+        if new_code and Course.objects.filter(code__iexact=new_code).exists():
+            # If code already taken, check if they meant an existing course or duplicate
+            existing_course = Course.objects.filter(code__iexact=new_code).first()
+            if existing_course.faculty_id and existing_course.faculty_id != request.user.id:
+                errors['new_course_code'] = [f'Course {new_code} already exists and is assigned to another instructor.']
+
         if errors:
             return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -254,6 +273,64 @@ class AdminFacultyOptionsView(APIView):
             user.phone = phone
             user.save(update_fields=['phone'])
 
+        display_name = user.get_full_name() or user.username
+        assigned_courses = []
+        course_details = []
+
+        # 1. Link selected existing courses
+        if raw_course_ids:
+            for c_id in raw_course_ids:
+                course = None
+                if str(c_id).isdigit():
+                    course = Course.objects.filter(id=int(c_id)).first()
+                if not course:
+                    course = Course.objects.filter(code__iexact=str(c_id).strip()).first()
+                if course:
+                    course.faculty = user
+                    course.faculty_name = display_name
+                    course.save(update_fields=['faculty', 'faculty_name', 'updated_at'])
+                    assigned_courses.append(course.code)
+                    course_details.append({'id': course.id, 'code': course.code, 'name': course.name})
+                    log_action(
+                        request.user,
+                        AuditLog.Action.COURSE_UPDATE,
+                        course,
+                        {
+                            'code': course.code,
+                            'assigned_faculty': user.username,
+                        },
+                    )
+
+        # 2. Optionally create a new course and assign to this faculty
+        if new_code:
+            course = Course.objects.filter(code__iexact=new_code).first()
+            if course:
+                course.faculty = user
+                course.faculty_name = display_name
+                course.save(update_fields=['faculty', 'faculty_name', 'updated_at'])
+            else:
+                course = Course.objects.create(
+                    code=new_code,
+                    name=new_name or new_code,
+                    description=new_desc,
+                    faculty=user,
+                    faculty_name=display_name,
+                    is_active=True,
+                )
+                log_action(
+                    request.user,
+                    AuditLog.Action.COURSE_CREATE,
+                    course,
+                    {
+                        'code': course.code,
+                        'name': course.name,
+                        'assigned_faculty': user.username,
+                    },
+                )
+            if course.code not in assigned_courses:
+                assigned_courses.append(course.code)
+                course_details.append({'id': course.id, 'code': course.code, 'name': course.name})
+
         log_action(
             request.user,
             AuditLog.Action.FACULTY_CREATE,
@@ -261,7 +338,8 @@ class AdminFacultyOptionsView(APIView):
             {
                 'username': user.username,
                 'email': user.email,
-                'display_name': user.get_full_name() or user.username,
+                'display_name': display_name,
+                'assigned_courses': assigned_courses,
             },
         )
 
@@ -271,11 +349,85 @@ class AdminFacultyOptionsView(APIView):
             'email': user.email,
             'first_name': user.first_name,
             'last_name': user.last_name,
-            'display_name': user.get_full_name() or user.username,
+            'display_name': display_name,
             'role': user.role,
             'is_active': user.is_active,
             'created_at': user.date_joined,
             'phone': getattr(user, 'phone', ''),
-            'course_count': 0,
-            'courses': [],
+            'course_count': len(assigned_courses),
+            'courses': assigned_courses,
+            'course_details': course_details,
         }, status=status.HTTP_201_CREATED)
+
+    @require_role(User.Role.ADMIN)
+    def patch(self, request):
+        """
+        Assign or reassign courses to an existing faculty member.
+        Payload: { 'faculty_id': 2, 'course_ids': [1, 3] }
+        """
+        data = request.data or {}
+        faculty_id = data.get('faculty_id')
+        if not faculty_id:
+            return Response({'error': {'message': 'faculty_id is required.'}}, status=status.HTTP_400_BAD_REQUEST)
+
+        faculty_user = User.objects.filter(id=faculty_id, role=User.Role.FACULTY).first()
+        if not faculty_user:
+            return Response({'error': {'message': 'Faculty member not found.'}}, status=status.HTTP_404_NOT_FOUND)
+
+        raw_course_ids = data.get('course_ids') or []
+        if isinstance(raw_course_ids, (int, str)):
+            raw_course_ids = [raw_course_ids]
+
+        display_name = faculty_user.get_full_name() or faculty_user.username
+
+        # Target course ids
+        target_ids = set()
+        for cid in raw_course_ids:
+            if str(cid).isdigit():
+                target_ids.add(int(cid))
+            else:
+                c = Course.objects.filter(code__iexact=str(cid).strip()).first()
+                if c:
+                    target_ids.add(c.id)
+
+        # Unassign courses previously assigned to this faculty that are not in target_ids
+        unassigned_courses = Course.objects.filter(faculty=faculty_user).exclude(id__in=target_ids)
+        for c in unassigned_courses:
+            c.faculty = None
+            c.save(update_fields=['faculty', 'updated_at'])
+            log_action(
+                request.user,
+                AuditLog.Action.COURSE_UPDATE,
+                c,
+                {'code': c.code, 'unassigned_faculty': faculty_user.username},
+            )
+
+        # Assign targeted courses
+        for cid in target_ids:
+            c = Course.objects.filter(id=cid).first()
+            if c:
+                c.faculty = faculty_user
+                c.faculty_name = display_name
+                c.save(update_fields=['faculty', 'faculty_name', 'updated_at'])
+                log_action(
+                    request.user,
+                    AuditLog.Action.COURSE_UPDATE,
+                    c,
+                    {'code': c.code, 'assigned_faculty': faculty_user.username},
+                )
+
+        updated_courses = list(faculty_user.courses.values_list('code', flat=True))
+        course_details = [
+            {'id': c.id, 'code': c.code, 'name': c.name}
+            for c in faculty_user.courses.filter(is_active=True)
+        ]
+
+        return Response({
+            'id': faculty_user.id,
+            'username': faculty_user.username,
+            'email': faculty_user.email,
+            'display_name': display_name,
+            'course_count': len(updated_courses),
+            'courses': updated_courses,
+            'course_details': course_details,
+        }, status=status.HTTP_200_OK)

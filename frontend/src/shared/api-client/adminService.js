@@ -66,4 +66,12 @@ export const adminService = {
     const response = await apiClient.post('/admin/faculty/', facultyData);
     return response.data;
   },
+
+  assignFacultyCourses: async (facultyId, courseIds) => {
+    const response = await apiClient.patch('/admin/faculty/', {
+      faculty_id: facultyId,
+      course_ids: courseIds,
+    });
+    return response.data;
+  },
 };
