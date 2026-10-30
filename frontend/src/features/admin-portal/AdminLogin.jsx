@@ -97,22 +97,22 @@ export const AdminLogin = () => {
         <div className="auth-header premium-header">
           <div className="header-brand">
             <div className="admin-icon" aria-hidden="true">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 22 12 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M12 8L16 12M16 12L12 16M16 12H8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <span className="auth-badge glow-badge">Mission Control</span>
           </div>
-          <h2 style={{ color: '#FCF9EA', marginTop: '0.4rem', fontSize: '1.25rem', fontFamily: 'Fraunces, Georgia, serif' }}>
+          <h2 className="admin-login-heading">
             Faculty &amp; Admin Sign In
           </h2>
         </div>
 
         <ul className="auth-capabilities premium-caps">
-          <li><span className="cap-dot"></span> Question Bank &amp; Exam Builder</li>
-          <li><span className="cap-dot"></span> Live Proctor Monitoring Room</li>
-          <li><span className="cap-dot"></span> Subjective Grading &amp; System Overview</li>
+          <li><span className="cap-dot"></span> Question Bank &amp; Builder</li>
+          <li><span className="cap-dot"></span> Live Proctor Monitor</li>
+          <li><span className="cap-dot"></span> Grading &amp; Overview</li>
         </ul>
 
         <form onSubmit={handleSubmit} className="auth-form">
@@ -172,14 +172,13 @@ export const AdminLogin = () => {
           </div>
 
           <div className="demo-credentials-helper admin-helper">
-            <span className="demo-helper-label" style={{ color: '#F6E8D2', display: 'block', marginBottom: '0.4rem' }}>
-              Staff Quick Demo Fill:
+            <span className="demo-helper-label">
+              ⚡ Staff Quick Demo Fill:
             </span>
-            <div className="demo-helper-chips" style={{ display: 'flex', gap: '0.5rem' }}>
+            <div className="demo-helper-chips">
               <button
                 type="button"
                 className="demo-chip-btn premium-chip"
-                style={{ flex: 1 }}
                 onClick={() => setFormData({ email: 'admin@proctox.edu', password: 'AdminPass123!' })}
               >
                 ⚡ Admin
@@ -187,7 +186,6 @@ export const AdminLogin = () => {
               <button
                 type="button"
                 className="demo-chip-btn premium-chip"
-                style={{ flex: 1 }}
                 onClick={() => setFormData({ email: 'faculty@proctox.edu', password: 'FacultyPass123!' })}
               >
                 ⚡ Faculty

@@ -138,7 +138,6 @@ export const Login = () => {
                 <button
                   type="button"
                   className="demo-chip-btn demo-student-chip"
-                  style={{ width: '100%', padding: '0.55rem 0.85rem' }}
                   onClick={() => setFormData({ email: 'student@proctox.edu', password: 'StudentPass123!' })}
                 >
                   ⚡ Fill Student Demo Credentials
