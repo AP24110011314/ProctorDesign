@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { adminService } from '../../shared/api-client/adminService';
 import './CourseManagement.css';
 
@@ -431,7 +432,16 @@ export const CourseManagement = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="course-faculty">Faculty in-charge *</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                  <label htmlFor="course-faculty" style={{ margin: 0 }}>Faculty in-charge *</label>
+                  <Link
+                    to="/admin/faculty"
+                    style={{ fontSize: '0.78rem', color: 'var(--caramel-ink, #4A2E14)', fontWeight: 700, textDecoration: 'none' }}
+                    title="Open Faculty Management to add a new instructor"
+                  >
+                    + Add New Faculty →
+                  </Link>
+                </div>
                 <input
                   id="course-faculty"
                   name="facultyQuery"

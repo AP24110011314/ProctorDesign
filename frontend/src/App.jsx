@@ -16,6 +16,7 @@ import { SystemCheck } from './features/student-portal/SystemCheck';
 import { ExamTaking } from './features/student-portal/ExamTaking';
 import { SystemOverview } from './features/admin-portal/SystemOverview';
 import { CourseManagement } from './features/admin-portal/CourseManagement';
+import { FacultyManagement } from './features/admin-portal/FacultyManagement';
 import { AdminLogin } from './features/admin-portal/AdminLogin';
 import { isDemoModeActive } from './shared/api-client/demoMockService';
 import './App.css';
@@ -240,6 +241,7 @@ const AdminDashboard = () => (
     links={[
       { to: '/admin', label: 'System Overview', icon: '◈', end: true },
       { to: '/admin/courses', label: 'Courses', icon: '▤' },
+      { to: '/admin/faculty', label: 'Faculty', icon: '👥' },
       { to: '/admin/exams', label: 'Manage Exams', icon: '⊞' },
       { to: '/admin/exams/build', label: 'Roll Out Test', icon: '➤' },
       { to: '/admin/questions', label: 'Question Bank', icon: '▤' },
@@ -252,6 +254,7 @@ const AdminDashboard = () => (
       <Route index element={<SystemOverview />} />
       <Route path="overview" element={<SystemOverview />} />
       <Route path="courses" element={<CourseManagement />} />
+      <Route path="faculty" element={<FacultyManagement />} />
       {/* Admins reuse the faculty workflows server-side RBAC already allows
           FACULTY + ADMIN on all exam/grading/proctoring endpoints. */}
       <Route path="exams" element={<ExamManagement />} />

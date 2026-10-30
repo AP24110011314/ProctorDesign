@@ -55,7 +55,7 @@ export const Login = () => {
           </div>
           <div className="admin-btn-text">
             <span className="admin-btn-title">Mission Control</span>
-            <span className="admin-btn-sub">Admin &amp; Faculty Portal</span>
+            <span className="admin-btn-sub">Faculty &amp; Admin Access</span>
           </div>
         </div>
         <span className="admin-btn-arrow" aria-hidden="true">
@@ -78,9 +78,9 @@ export const Login = () => {
         </div>
         <div className="auth-card">
           <div className="auth-header">
-            <span className="auth-badge">Exam Portal</span>
-            <h1>Welcome back</h1>
-            <h2>Log in to your examination account</h2>
+            <span className="auth-badge">Student Portal</span>
+            <h1>Student Sign In</h1>
+            <h2>Access your proctored exams, system check &amp; results</h2>
           </div>
 
           <form onSubmit={handleSubmit} className="auth-form">
@@ -91,7 +91,7 @@ export const Login = () => {
             )}
 
             <div className="form-group">
-              <label htmlFor="email">Email or Username</label>
+              <label htmlFor="email">Student Email or Username</label>
               <input
                 type="text"
                 id="email"
@@ -103,7 +103,7 @@ export const Login = () => {
                 autoCapitalize="none"
                 autoCorrect="off"
                 disabled={loading}
-                placeholder="admin@proctox.edu or admin"
+                placeholder="student@proctox.edu or student"
               />
             </div>
 
@@ -133,34 +133,21 @@ export const Login = () => {
             </div>
 
             <div className="demo-credentials-helper">
-              <span className="demo-helper-label">Quick Demo Fill:</span>
+              <span className="demo-helper-label">Quick Student Demo:</span>
               <div className="demo-helper-chips">
                 <button
                   type="button"
-                  className="demo-chip-btn"
-                  onClick={() => setFormData({ email: 'admin@proctox.edu', password: 'AdminPass123!' })}
-                >
-                  ⚡ Admin
-                </button>
-                <button
-                  type="button"
-                  className="demo-chip-btn"
-                  onClick={() => setFormData({ email: 'faculty@proctox.edu', password: 'FacultyPass123!' })}
-                >
-                  ⚡ Faculty
-                </button>
-                <button
-                  type="button"
-                  className="demo-chip-btn"
+                  className="demo-chip-btn demo-student-chip"
+                  style={{ width: '100%', padding: '0.55rem 0.85rem' }}
                   onClick={() => setFormData({ email: 'student@proctox.edu', password: 'StudentPass123!' })}
                 >
-                  ⚡ Student
+                  ⚡ Fill Student Demo Credentials
                 </button>
               </div>
             </div>
 
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Logging in...' : 'Login →'}
+              {loading ? 'Signing in...' : 'Sign In as Student →'}
             </button>
           </form>
 

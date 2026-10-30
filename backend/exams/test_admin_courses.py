@@ -299,3 +299,67 @@ class AdminCourseTests(TestCase):
         self.client.force_authenticate(user=self.faculty)
         response = self.client.get(f'/api/exams/{exam.id}/', format='json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_admin_can_create_new_faculty(self):
+        self.client.force_authenticate(user=self.admin)
+        payload = {
+            'username': 'newprof',
+            'email': 'newprof@proctox.edu',
+            'password': 'SecurePass123!',
+            'first_name': 'Alan',
+            'last_name': 'Turing',
+        }
+        response = self.client.post('/api/admin/faculty/', payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['username'], 'newprof')
+        self.assertEqual(response.data['role'], 'faculty')
+
+        new_user = User.objects.get(username='newprof')
+        self.assertEqual(new_user.role, User.Role.FACULTY)
+        self.assertTrue(new_user.check_password('SecurePass123!'))
+
+        # Verify audit log recorded
+        entry = AuditLog.objects.filter(action=AuditLog.Action.FACULTY_CREATE, target_id=new_user.id).first()
+        self.assertIsNotNone(entry)
+        self.assertEqual(entry.actor, self.admin)
+
+    def test_admin_create_faculty_validations(self):
+        self.client.force_authenticate(user=self.admin)
+        # Duplicate username
+        res1 = self.client.post('/api/admin/faculty/', {
+            'username': 'faculty1',
+            'email': 'unique@proctox.edu',
+            'password': 'Password123!',
+        }, format='json')
+        self.assertEqual(res1.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', res1.data)
+
+        # Duplicate email
+        res2 = self.client.post('/api/admin/faculty/', {
+            'username': 'unique_user',
+            'email': 'faculty@example.edu',
+            'password': 'Password123!',
+        }, format='json')
+        self.assertEqual(res2.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', res2.data)
+
+        # Short password
+        res3 = self.client.post('/api/admin/faculty/', {
+            'username': 'unique_user2',
+            'email': 'unique2@proctox.edu',
+            'password': 'short',
+        }, format='json')
+        self.assertEqual(res3.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('password', res3.data)
+
+    def test_non_admin_cannot_create_faculty(self):
+        payload = {
+            'username': 'sneakyperson',
+            'email': 'sneaky@proctox.edu',
+            'password': 'Password123!',
+        }
+        for user in (self.faculty, self.student):
+            self.client.force_authenticate(user=user)
+            response = self.client.post('/api/admin/faculty/', payload, format='json')
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+

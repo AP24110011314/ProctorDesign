@@ -50,8 +50,20 @@ export const adminService = {
     return response.data;
   },
 
-  getFacultyOptions: async () => {
-    const response = await apiClient.get('/admin/faculty/');
+  getFacultyOptions: async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const response = await apiClient.get(`/admin/faculty/${query ? `?${query}` : ''}`);
+    return response.data;
+  },
+
+  listFaculty: async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const response = await apiClient.get(`/admin/faculty/${query ? `?${query}` : ''}`);
+    return response.data;
+  },
+
+  createFaculty: async (facultyData) => {
+    const response = await apiClient.post('/admin/faculty/', facultyData);
     return response.data;
   },
 };

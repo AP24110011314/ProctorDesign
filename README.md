@@ -60,15 +60,16 @@ python manage.py seed_demo_users
 
 | Role | Username | Email | Password | Primary Portal | Access Privileges |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Admin** | `admin` | `admin@proctox.edu` | `AdminPass123!` | `/admin/login` or `/login` | Full Mission Control, System Overview, Course Management, Exam Controls, Live Proctor Monitoring, Attempt Voiding & Audit Logs |
-| **Faculty** | `faculty` | `faculty@proctox.edu` | `FacultyPass123!` | `/login` | Question Bank management, Exam Builder, Live Proctor Monitoring Room, Subjective Grading Queue, Results Publishing |
-| **Student** | `student` | `student@proctox.edu` | `StudentPass123!` | `/login` | Pre-exam System Readiness Check (Camera & Screen), Exam Taking with real-time proctoring telemetry, Student Results View |
+| **Admin** | `admin` | `admin@proctox.edu` | `AdminPass123!` | `/admin/login` (Mission Control) | Full Mission Control, System Overview, Course & Faculty Management, Exam Controls, Live Proctor Monitoring, Attempt Voiding & Audit Logs |
+| **Faculty** | `faculty` | `faculty@proctox.edu` | `FacultyPass123!` | `/admin/login` (Mission Control) | Question Bank management, Exam Builder, Live Proctor Monitoring Room, Subjective Grading Queue, Results Publishing |
+| **Student** | `student` | `student@proctox.edu` | `StudentPass123!` | `/login` (Student Portal) | Pre-exam System Readiness Check (Camera & Screen), Exam Taking with real-time proctoring telemetry, Student Results View |
 
 > [!TIP]
-> - **Hosted Vercel Preview (Demo Mode):** When deployed on Vercel without a live backend connection, the app automatically runs in **interactive Demo Mode** with full offline persistence, allowing immediate testing of all three roles.
-> - **Direct Mission Control Entry:** Administrators can sign in directly at [`/admin/login`](http://localhost:5173/admin/login) or via the **Mission Control** button on the main login screen.
-> - **Smart Role-Based Routing:** Logging in via the main portal ([`/login`](http://localhost:5173/login)) automatically directs you to your role's portal (`/admin`, `/faculty`, or `/student`).
-> - **Quick-Fill Buttons:** Tap the **⚡ Admin**, **⚡ Faculty**, or **⚡ Student** buttons on the login screen to auto-fill credentials on mobile or desktop without typing.
+> - **Two Dedicated Login Portals:**
+>   - **Student Portal ([`/login`](http://localhost:5173/login)):** Tailored for candidates with one-click **⚡ Student** demo fill and registration links.
+>   - **Mission Control ([`/admin/login`](http://localhost:5173/admin/login)):** Unified command center for **Faculty** and **Administrators** with **⚡ Admin** and **⚡ Faculty** quick-fill chips (non-staff accounts are rejected).
+> - **Faculty Provisioning from Admin Portal:** Administrators can provision new faculty accounts directly from [`/admin/faculty`](http://localhost:5173/admin/faculty), generate secure passwords, copy credentials, and assign instructors to courses.
+> - **Hosted Vercel Preview (Demo Mode):** When deployed on Vercel without a live backend connection, the app automatically runs in **interactive Demo Mode** with full offline persistence, allowing immediate testing of all roles including newly provisioned faculty accounts.
 > - **Full-Stack Production Deployment:** For instructions on connecting your Vercel frontend to a live Render/PostgreSQL backend, see [`DEPLOYMENT.md`](./DEPLOYMENT.md).
 
 ---
@@ -269,15 +270,16 @@ photo match, audio transcription, native mobile apps, billing, live human video-
 
 ## Frontend Routes
 
-- `/login`, `/register`, `/unauthorized`
-- `/admin/login` — separated administrator entry (Mission Control skin, same JWT flow, rejects non-admins)
+- `/login` — dedicated Student Examination Portal (quick student fill, registration link)
+- `/admin/login` — unified Mission Control entry for Faculty & Administrators (quick admin & faculty fills, rejects students)
+- `/register`, `/unauthorized`
 - Student: `/student` (dashboard), `/student/exams` (My Exams — start/resume/results),
   `/student/exams/:examId/check` (SystemCheck), `/student/attempts/:attemptId/take` (exam + sensors),
   `/student/results` (My Results)
 - Faculty: `/faculty/questions`, `/faculty/exams/build`, `/faculty/grading`, `/faculty/results`,
   `/faculty/monitor` (LiveMonitor)
-- Admin: `/admin/overview` (SystemOverview), `/admin/exams/build` (roll out tests),
-  `/admin/questions`, `/admin/monitor`, `/admin/grading`, `/admin/results` —
+- Admin: `/admin/overview` (SystemOverview), `/admin/courses` (CourseManagement), `/admin/faculty` (FacultyManagement & Provisioning),
+  `/admin/exams/build` (roll out tests), `/admin/questions`, `/admin/monitor`, `/admin/grading`, `/admin/results` —
   admin console reuses the faculty workflows (server RBAC already allows FACULTY + ADMIN there)
 
 All API calls go through the shared `apiClient` (localStorage tokens + auto-refresh on 401) —

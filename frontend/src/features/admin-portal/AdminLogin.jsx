@@ -4,14 +4,12 @@ import { useAuth } from '../../shared/hooks/useAuth';
 import '../auth/Auth.css';
 
 /**
- * Dedicated administrator entry point (separate from the student/faculty login).
+ * Mission Control Portal — Unified staff entry point for both Faculty and Administrators.
  *
- * Security notes:
- * - Same JWT flow as the main login (authService.login) — no parallel auth
- *   system. Server-side RBAC is the real gate (system endpoints are
- *   admin-only; exam/grading/proctoring endpoints allow faculty + admin).
- * - Non-admin credentials are rejected here AND would 403 on every admin
- *   endpoint anyway; tokens are cleared on rejection.
+ * Security & RBAC:
+ * - Faculty accounts land directly in the Faculty Dashboard (/faculty).
+ * - Administrator accounts land directly in Mission Control (/admin).
+ * - Students attempting to log in here are rejected and directed to the Student Portal.
  */
 export const AdminLogin = () => {
   const navigate = useNavigate();
@@ -23,9 +21,12 @@ export const AdminLogin = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Already signed in as admin → straight to mission control.
+  // If already authenticated with staff credentials, route to their respective portal
   if (user?.role === 'admin' || user?.is_superuser) {
     return <Navigate to="/admin" replace />;
+  }
+  if (user?.role === 'faculty') {
+    return <Navigate to="/faculty" replace />;
   }
 
   const handleChange = (e) => {
@@ -43,15 +44,23 @@ export const AdminLogin = () => {
 
     try {
       const data = await login(formData.email, formData.password);
-      if (data.user?.role !== 'admin' && !data.user?.is_superuser) {
-        // Valid credentials, wrong door — clear the session, deny entry.
+      const role = data.user?.role;
+      const isSuper = data.user?.is_superuser;
+
+      if (role !== 'admin' && role !== 'faculty' && !isSuper) {
+        // Student credentials entered into Mission Control
         logout();
-        setError('This portal is for administrators only. Use the main login for student or faculty access.');
+        setError('This portal is reserved for Faculty and Administrators. Please use the Student Portal to sign in.');
         return;
       }
-      navigate('/admin');
+
+      if (role === 'admin' || isSuper) {
+        navigate('/admin');
+      } else {
+        navigate('/faculty');
+      }
     } catch (err) {
-      // Generic message — never reveal whether the email exists.
+      // Generic message — never reveal whether the email exists
       setError(err.response?.data?.error?.message || 'Invalid credentials');
     } finally {
       setLoading(false);
@@ -60,7 +69,7 @@ export const AdminLogin = () => {
 
   return (
     <div className="auth-container auth-admin">
-      <Link to="/login" className="floating-corner-btn" title="Back to Main Portal">
+      <Link to="/login" className="floating-corner-btn" title="Back to Student Portal">
         <div className="admin-btn-left">
           <div className="corner-icon-small" aria-hidden="true">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -69,8 +78,8 @@ export const AdminLogin = () => {
             </svg>
           </div>
           <div className="admin-btn-text">
-            <span className="admin-btn-title">Main Portal</span>
-            <span className="admin-btn-sub">Student &amp; Faculty Access</span>
+            <span className="admin-btn-title">Student Portal</span>
+            <span className="admin-btn-sub">Student Examination Access</span>
           </div>
         </div>
         <span className="admin-btn-arrow" aria-hidden="true">
@@ -87,26 +96,29 @@ export const AdminLogin = () => {
       <div className="auth-card premium-glass">
         <div className="auth-header premium-header">
           <div className="header-brand">
-            <div className="admin-icon">
+            <div className="admin-icon" aria-hidden="true">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 22 12 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M12 8L16 12M16 12L12 16M16 12H8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <span className="auth-badge glow-badge">Mission Control</span>
           </div>
+          <h2 style={{ color: '#FCF9EA', marginTop: '0.4rem', fontSize: '1.25rem', fontFamily: 'Fraunces, Georgia, serif' }}>
+            Faculty &amp; Admin Sign In
+          </h2>
         </div>
 
         <ul className="auth-capabilities premium-caps">
-          <li><span className="cap-dot"></span> Roll out &amp; publish exams</li>
-          <li><span className="cap-dot"></span> Live monitoring room</li>
-          <li><span className="cap-dot"></span> Integrity review &amp; void</li>
+          <li><span className="cap-dot"></span> Question Bank &amp; Exam Builder</li>
+          <li><span className="cap-dot"></span> Live Proctor Monitoring Room</li>
+          <li><span className="cap-dot"></span> Subjective Grading &amp; System Overview</li>
         </ul>
 
         <form onSubmit={handleSubmit} className="auth-form">
           {error && (
             <div className="error-message glass-error" role="alert">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
                 <line x1="12" y1="9" x2="12" y2="13"/>
                 <line x1="12" y1="17" x2="12.01" y2="17"/>
@@ -116,9 +128,9 @@ export const AdminLogin = () => {
           )}
 
           <div className="form-group premium-input-wrapper">
-            <label htmlFor="admin-email">Admin email or username</label>
+            <label htmlFor="admin-email">Staff email or username</label>
             <div className="input-with-icon">
-              <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                 <polyline points="22,6 12,13 2,6"/>
               </svg>
@@ -129,7 +141,7 @@ export const AdminLogin = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                placeholder="admin@proctox.edu or admin"
+                placeholder="admin@proctox.edu or faculty@proctox.edu"
                 autoComplete="username"
                 autoCapitalize="none"
                 autoCorrect="off"
@@ -141,7 +153,7 @@ export const AdminLogin = () => {
           <div className="form-group premium-input-wrapper">
             <label htmlFor="admin-password">Secure passphrase</label>
             <div className="input-with-icon">
-              <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
@@ -160,17 +172,31 @@ export const AdminLogin = () => {
           </div>
 
           <div className="demo-credentials-helper admin-helper">
-            <button
-              type="button"
-              className="demo-chip-btn premium-chip"
-              onClick={() => setFormData({ email: 'admin@proctox.edu', password: 'AdminPass123!' })}
-            >
-              ⚡ Fill Admin Demo Credentials
-            </button>
+            <span className="demo-helper-label" style={{ color: '#F6E8D2', display: 'block', marginBottom: '0.4rem' }}>
+              Staff Quick Demo Fill:
+            </span>
+            <div className="demo-helper-chips" style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                type="button"
+                className="demo-chip-btn premium-chip"
+                style={{ flex: 1 }}
+                onClick={() => setFormData({ email: 'admin@proctox.edu', password: 'AdminPass123!' })}
+              >
+                ⚡ Admin
+              </button>
+              <button
+                type="button"
+                className="demo-chip-btn premium-chip"
+                style={{ flex: 1 }}
+                onClick={() => setFormData({ email: 'faculty@proctox.edu', password: 'FacultyPass123!' })}
+              >
+                ⚡ Faculty
+              </button>
+            </div>
           </div>
 
           <button type="submit" className="btn-primary btn-premium" disabled={loading}>
-            {loading ? 'Authenticating...' : 'Engage System'}
+            {loading ? 'Authenticating...' : 'Sign In to Mission Control →'}
           </button>
         </form>
       </div>

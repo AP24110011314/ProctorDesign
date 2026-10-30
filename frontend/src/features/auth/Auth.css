@@ -247,6 +247,18 @@
   transform: translateY(0);
 }
 
+.demo-student-chip {
+  background: var(--sage-ghost, #F1F5EA);
+  border-color: var(--sage-border, #C4D1B4);
+  color: var(--sage-ink, #2F3A26);
+}
+
+.demo-student-chip:hover {
+  background: #E4ECDA;
+  border-color: #A9BC94;
+  color: #242E1C;
+}
+
 .admin-helper {
   background: rgba(46, 42, 35, 0.4);
   border-color: rgba(219, 149, 88, 0.35);

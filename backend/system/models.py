@@ -18,6 +18,7 @@ class AuditLog(models.Model):
         COURSE_UPDATE = 'course.update', 'Course Updated'
         COURSE_DEACTIVATE = 'course.deactivate', 'Course Deactivated'
         COURSE_REACTIVATE = 'course.reactivate', 'Course Reactivated'
+        FACULTY_CREATE = 'faculty.create', 'Faculty Created'
 
     actor = models.ForeignKey(
         settings.AUTH_USER_MODEL,

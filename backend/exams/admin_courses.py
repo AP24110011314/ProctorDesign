@@ -1,5 +1,5 @@
 from django.db.models import Q
-from rest_framework import mixins, serializers, viewsets
+from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -177,22 +177,105 @@ class AdminCourseViewSet(
 
 class AdminFacultyOptionsView(APIView):
     """
-    Admin-only dropdown source: active faculty users.
-    GET /api/admin/faculty/
+    Admin-only faculty directory and provisioning:
+    GET  /api/admin/faculty/       list faculty (with active courses & contact info)
+    POST /api/admin/faculty/       provision a new faculty account
     """
     permission_classes = [IsAuthenticated]
 
     @require_role(User.Role.ADMIN)
     def get(self, request):
-        faculty = User.objects.filter(
-            role=User.Role.FACULTY, is_active=True
-        ).order_by('first_name', 'last_name', 'username')
+        include_inactive = request.query_params.get('all', '').lower() in ('true', '1')
+        qs = User.objects.filter(role=User.Role.FACULTY)
+        if not include_inactive:
+            qs = qs.filter(is_active=True)
+        faculty = qs.order_by('first_name', 'last_name', 'username')
         return Response([
             {
                 'id': u.id,
                 'username': u.username,
                 'email': u.email,
+                'first_name': u.first_name,
+                'last_name': u.last_name,
                 'display_name': u.get_full_name() or u.username,
+                'role': u.role,
+                'is_active': u.is_active,
+                'created_at': u.date_joined,
+                'phone': getattr(u, 'phone', ''),
+                'course_count': u.course_set.count() if hasattr(u, 'course_set') else 0,
+                'courses': list(u.course_set.values_list('code', flat=True)) if hasattr(u, 'course_set') else [],
             }
             for u in faculty
         ])
+
+    @require_role(User.Role.ADMIN)
+    def post(self, request):
+        data = request.data or {}
+        username = str(data.get('username') or '').strip()
+        email = str(data.get('email') or '').strip().lower()
+        password = str(data.get('password') or '').strip()
+        first_name = str(data.get('first_name') or '').strip()
+        last_name = str(data.get('last_name') or '').strip()
+        phone = str(data.get('phone') or '').strip()
+
+        errors = {}
+        if not username:
+            errors['username'] = ['Username is required.']
+        elif len(username) < 3:
+            errors['username'] = ['Username must be at least 3 characters.']
+        elif User.objects.filter(username__iexact=username).exists():
+            errors['username'] = ['A user with this username already exists.']
+
+        if not email:
+            errors['email'] = ['Email is required.']
+        elif '@' not in email or '.' not in email.split('@')[-1]:
+            errors['email'] = ['Enter a valid email address.']
+        elif User.objects.filter(email__iexact=email).exists():
+            errors['email'] = ['A user with this email already exists.']
+
+        if not password:
+            errors['password'] = ['Password is required.']
+        elif len(password) < 8:
+            errors['password'] = ['Password must be at least 8 characters.']
+
+        if errors:
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            role=User.Role.FACULTY,
+            is_active=True,
+        )
+        if phone:
+            user.phone = phone
+            user.save(update_fields=['phone'])
+
+        log_action(
+            request.user,
+            AuditLog.Action.FACULTY_CREATE,
+            user,
+            {
+                'username': user.username,
+                'email': user.email,
+                'display_name': user.get_full_name() or user.username,
+            },
+        )
+
+        return Response({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'display_name': user.get_full_name() or user.username,
+            'role': user.role,
+            'is_active': user.is_active,
+            'created_at': user.date_joined,
+            'phone': getattr(user, 'phone', ''),
+            'course_count': 0,
+            'courses': [],
+        }, status=status.HTTP_201_CREATED)

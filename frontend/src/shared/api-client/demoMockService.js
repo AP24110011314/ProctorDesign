@@ -423,9 +423,9 @@ export const handleMockRequest = async (config) => {
       (u) => u.email.toLowerCase() === identifier || u.username.toLowerCase() === identifier
     );
 
-    const expectedPass = store.passwords[identifier] || 'AdminPass123!';
+    const expectedPass = store.passwords[identifier] || user?.password || 'AdminPass123!';
 
-    if (!user || (password !== expectedPass && password !== 'AdminPass123!' && password !== 'FacultyPass123!' && password !== 'StudentPass123!')) {
+    if (!user || (password !== expectedPass && password !== user.password && password !== 'AdminPass123!' && password !== 'FacultyPass123!' && password !== 'StudentPass123!')) {
       return err('Invalid credentials. Check email and password.', 401, 'invalid_credentials');
     }
 
@@ -559,16 +559,80 @@ export const handleMockRequest = async (config) => {
     return err('Course not found', 404);
   }
 
-  // 7. Admin Faculty Options
-  if (url === '/admin/faculty/' && method === 'get') {
-    const facultyList = store.users
-      .filter((u) => u.role === 'faculty')
-      .map((u) => ({
-        id: u.id,
-        display_name: `${u.first_name} ${u.last_name}`,
-        email: u.email,
-      }));
-    return ok(facultyList);
+  // 7. Admin Faculty Options & Provisioning
+  if (url.startsWith('/admin/faculty/')) {
+    if (method === 'get') {
+      const facultyList = store.users
+        .filter((u) => u.role === 'faculty')
+        .map((u) => {
+          const displayName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username;
+          const assignedCourses = store.courses
+            .filter((c) => c.faculty === u.id || (c.faculty_name && c.faculty_name.toLowerCase() === displayName.toLowerCase()))
+            .map((c) => c.code);
+          return {
+            id: u.id,
+            username: u.username,
+            email: u.email,
+            first_name: u.first_name || '',
+            last_name: u.last_name || '',
+            display_name: displayName,
+            role: 'faculty',
+            is_active: u.is_active !== false,
+            created_at: u.created_at || new Date().toISOString(),
+            course_count: assignedCourses.length,
+            courses: assignedCourses,
+          };
+        });
+      return ok(facultyList);
+    }
+
+    if (method === 'post') {
+      const username = (body.username || '').trim();
+      const email = (body.email || '').trim().toLowerCase();
+      const password = (body.password || '').trim();
+      const firstName = (body.first_name || '').trim();
+      const lastName = (body.last_name || '').trim();
+
+      if (!username) return err('Username is required.', 400);
+      if (store.users.some((u) => (u.username || '').toLowerCase() === username.toLowerCase())) {
+        return err({ username: ['A user with this username already exists.'] }, 400);
+      }
+      if (!email) return err('Email is required.', 400);
+      if (store.users.some((u) => (u.email || '').toLowerCase() === email)) {
+        return err({ email: ['A user with this email already exists.'] }, 400);
+      }
+      if (!password || password.length < 8) {
+        return err({ password: ['Password must be at least 8 characters.'] }, 400);
+      }
+
+      const newFaculty = {
+        id: Date.now(),
+        username,
+        email,
+        password,
+        first_name: firstName,
+        last_name: lastName,
+        role: 'faculty',
+        is_active: true,
+        created_at: new Date().toISOString(),
+      };
+      store.users.push(newFaculty);
+      saveStore(store);
+
+      return ok({
+        id: newFaculty.id,
+        username: newFaculty.username,
+        email: newFaculty.email,
+        first_name: newFaculty.first_name,
+        last_name: newFaculty.last_name,
+        display_name: `${newFaculty.first_name} ${newFaculty.last_name}`.trim() || newFaculty.username,
+        role: 'faculty',
+        is_active: true,
+        created_at: newFaculty.created_at,
+        course_count: 0,
+        courses: [],
+      }, 201);
+    }
   }
 
   // 8. Questions

@@ -332,6 +332,7 @@ class GradingFlowTests(TestCase):
         response = self.client.get(f'/api/grading/exams/{self.exam.id}/export/')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    @override_settings(AI_ASSIST_GRADING_ENABLED=False)
     def test_suggest_disabled_by_default(self):
         """Stretch goal stays off unless explicitly enabled; never writes."""
         attempt_id = self._submitted_attempt()
