@@ -45,6 +45,26 @@ export const Login = () => {
 
   return (
     <div className="auth-container">
+      <Link to="/admin/login" className="floating-admin-btn" title="Access Mission Control">
+        <div className="admin-btn-left">
+          <div className="admin-icon-small" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 22 12 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M12 8L16 12M16 12L12 16M16 12H8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <div className="admin-btn-text">
+            <span className="admin-btn-title">Mission Control</span>
+            <span className="admin-btn-sub">Admin &amp; Faculty Portal</span>
+          </div>
+        </div>
+        <span className="admin-btn-arrow" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </span>
+      </Link>
+
       <div className="auth-split">
         <div className="auth-panel" aria-hidden="true">
           <span className="auth-badge">ProctoX · Secure exams</span>
@@ -128,16 +148,6 @@ export const Login = () => {
           </div>
         </div>
       </div>
-
-      <Link to="/admin/login" className="floating-admin-btn">
-        <div className="admin-icon-small">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M12 8L16 12M16 12L12 16M16 12H8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
-        <span>Mission Control</span>
-      </Link>
     </div>
   );
 };

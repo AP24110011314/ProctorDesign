@@ -267,66 +267,6 @@
   text-decoration: underline;
 }
 
-@media (max-width: 860px) {
-  .auth-split { grid-template-columns: 1fr; }
-  .auth-panel { padding: 30px 24px; }
-}
-
-@media (max-width: 600px) {
-  .auth-container {
-    padding: 16px 10px;
-    align-items: flex-start;
-  }
-
-  .auth-split {
-    border-radius: 18px;
-  }
-
-  .auth-panel {
-    padding: 24px 18px;
-  }
-
-  .auth-panel h2 {
-    font-size: 1.5rem;
-  }
-
-  .auth-card {
-    padding: 24px 18px;
-  }
-
-  .auth-header h1 {
-    font-size: 19px;
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-
-  .auth-admin .premium-glass {
-    padding: 20px 16px;
-    border-radius: 18px;
-    width: 100%;
-  }
-
-  .auth-admin .admin-icon {
-    width: 40px;
-    height: 40px;
-  }
-
-  .auth-admin .header-brand h1 {
-    font-size: 20px;
-  }
-
-  .auth-admin .premium-caps {
-    gap: 0.3rem;
-  }
-
-  .auth-admin .premium-caps li {
-    font-size: 0.74rem;
-    padding: 0.3rem 0.65rem;
-  }
-}
-
 /* ---------- Admin variant: dark "mission control" skin ----------
  * Same layout/markup contract as the main login, distinct identity so the
  * separated admin entry point is unmistakable. Cream text on deep sage-ink
@@ -619,6 +559,31 @@
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2), 0 0 15px rgba(219, 149, 88, 0.15);
 }
 
+.admin-btn-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.admin-btn-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.admin-btn-title {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.admin-btn-sub {
+  display: none;
+}
+
+.admin-btn-arrow {
+  display: none;
+}
+
 .admin-icon-small {
   width: 28px;
   height: 28px;
@@ -682,14 +647,217 @@
   background: linear-gradient(135deg, rgba(219, 149, 88, 0.25), rgba(219, 149, 88, 0.1));
 }
 
-@media (max-width: 640px) {
-  .floating-admin-btn,
-  .floating-corner-btn {
-    position: static;
-    margin: 0 auto 16px auto;
-    font-size: 0.82rem;
-    padding: 0.4rem 0.85rem;
+@media (max-width: 860px) {
+  .auth-container {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .auth-container > .auth-card {
+    margin: 1.25rem auto 2.5rem;
+    width: calc(100% - 24px);
+    max-width: 520px;
+  }
+
+  .auth-split {
+    grid-template-columns: 1fr;
+    margin: 1.25rem auto 2.5rem;
+    width: calc(100% - 24px);
+    max-width: 480px;
+    border-radius: 20px;
+    box-shadow: 0 14px 40px rgba(154, 95, 43, 0.14);
+    background: #FFFEF9;
+  }
+
+  /* In mobile view, hide the side marketing copy so the login form sits directly below Mission Control */
+  .auth-panel {
+    display: none;
+  }
+
+  .auth-card {
+    padding: 28px 20px;
+  }
+
+  .floating-admin-btn {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+    border: none;
+    border-bottom: 2px solid rgba(219, 149, 88, 0.5);
+    background: linear-gradient(90deg, #242D1E 0%, #34412B 100%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    padding: 0.85rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.2);
+    z-index: 60;
+    transform: none !important;
+  }
+
+  .floating-admin-btn:hover {
+    transform: none !important;
+    background: linear-gradient(90deg, #1C2318 0%, #2A3622 100%);
+  }
+
+  .floating-admin-btn .admin-btn-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .floating-admin-btn .admin-icon-small {
+    width: 32px;
+    height: 32px;
+    background: rgba(219, 149, 88, 0.24);
+    border: 1px solid rgba(219, 149, 88, 0.55);
+    color: #DB9558;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  .floating-admin-btn .admin-btn-title {
+    font-size: 0.95rem;
+    font-weight: 750;
+    color: #FCF9EA;
+    letter-spacing: 0.01em;
+  }
+
+  .floating-admin-btn .admin-btn-sub {
+    display: block;
+    font-size: 0.72rem;
+    color: #C9D3B8;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  .floating-admin-btn .admin-btn-arrow {
+    display: flex;
+    align-items: center;
     justify-content: center;
-    width: fit-content;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: rgba(219, 149, 88, 0.2);
+    color: #DB9558;
+    border: 1px solid rgba(219, 149, 88, 0.4);
+  }
+
+  .floating-corner-btn {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+    border: none;
+    border-bottom: 2px solid rgba(231, 220, 194, 0.9);
+    background: rgba(255, 254, 249, 0.96);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    padding: 0.85rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 16px rgba(154, 95, 43, 0.08);
+    z-index: 60;
+    transform: none !important;
+  }
+
+  .floating-corner-btn:hover {
+    transform: none !important;
+  }
+
+  .floating-corner-btn .admin-btn-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .floating-corner-btn .corner-icon-small {
+    width: 32px;
+    height: 32px;
+    background: rgba(219, 149, 88, 0.15);
+    border: 1px solid rgba(219, 149, 88, 0.35);
+    color: #9A5F2B;
+  }
+
+  .floating-corner-btn .admin-btn-title {
+    font-size: 0.95rem;
+    font-weight: 750;
+    color: #2E2A23;
+  }
+
+  .floating-corner-btn .admin-btn-sub {
+    display: block;
+    font-size: 0.72rem;
+    color: #6F6759;
+    font-weight: 500;
+  }
+
+  .floating-corner-btn .admin-btn-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: rgba(219, 149, 88, 0.12);
+    color: #9A5F2B;
+    border: 1px solid rgba(219, 149, 88, 0.3);
+  }
+
+  .auth-admin .premium-glass {
+    margin: 1.25rem auto 2.5rem;
+    width: calc(100% - 24px);
+    max-width: 460px;
+    padding: 24px 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-card {
+    padding: 24px 16px;
+  }
+
+  .auth-header h1 {
+    font-size: 19px;
+  }
+
+  .auth-admin .premium-glass {
+    padding: 20px 16px;
+    border-radius: 18px;
+  }
+
+  .auth-admin .admin-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .auth-admin .header-brand h1 {
+    font-size: 20px;
+  }
+
+  .auth-admin .premium-caps {
+    gap: 0.3rem;
+  }
+
+  .auth-admin .premium-caps li {
+    font-size: 0.74rem;
+    padding: 0.3rem 0.65rem;
   }
 }
