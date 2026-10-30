@@ -60,3 +60,4 @@ In Render Dashboard → `proctox-backend` → **Environment**:
 | **"Invalid credentials" on Vercel** | Backend URL was defaulted to `http://localhost:8000`, which browsers block as Mixed Content on HTTPS. | The newly added demo interceptor now catches this automatically and signs you into Demo Mode. For a live backend, ensure `VITE_API_BASE_URL` is set in Vercel settings. |
 | **Render cold starts** | Render free-tier web services sleep after 15 minutes of inactivity. | The first request after idle can take 30–50 seconds to wake up. Check `https://<your-render-service>.onrender.com/api/health/` to verify backend status. |
 | **Database reset on Render** | If using SQLite instead of PostgreSQL, local disks are ephemeral on Render. | Ensure `DATABASE_URL` is configured to point to Render PostgreSQL (configured automatically by `render.yaml`). |
+
