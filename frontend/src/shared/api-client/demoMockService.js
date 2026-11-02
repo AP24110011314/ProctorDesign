@@ -833,10 +833,13 @@ export const handleMockRequest = async (config) => {
   }
 
   if (url === '/questions/' && method === 'post') {
+    const isMCQ = String(body.type || '').toLowerCase().includes('mcq');
+    const courseId = Number(body.course) || body.course;
+    const courseObj = store.courses.find((c) => c.id === courseId || c.id === body.course);
     const newQ = {
       id: Date.now(),
-      course: body.course,
-      course_name: store.courses.find((c) => c.id === body.course)?.name || 'Course',
+      course: courseId,
+      course_name: courseObj ? `${courseObj.code} - ${courseObj.name}` : (body.course_name || 'Course'),
       type: body.type,
       difficulty: body.difficulty,
       topic: body.topic || '',
@@ -844,12 +847,16 @@ export const handleMockRequest = async (config) => {
       text: body.text,
       model_answer: body.model_answer || '',
       created_by: 2,
-      options: (body.options || []).map((o, idx) => ({
-        id: Date.now() + idx,
-        text: o.text,
-        is_correct: Boolean(o.is_correct),
-        order: idx + 1,
-      })),
+      options: isMCQ
+        ? (body.options || [])
+            .filter((o) => o && o.text && o.text.trim().length > 0)
+            .map((o, idx) => ({
+              id: Date.now() + idx,
+              text: o.text.trim(),
+              is_correct: Boolean(o.is_correct),
+              order: idx + 1,
+            }))
+        : [],
     };
     store.questions.unshift(newQ);
     saveStore(store);
@@ -868,7 +875,28 @@ export const handleMockRequest = async (config) => {
     const qId = parseInt(qMatch[1], 10);
     const question = store.questions.find((q) => q.id === qId);
     if (question) {
-      Object.assign(question, body);
+      const qType = body.type !== undefined ? body.type : question.type;
+      const isMCQ = String(qType || '').toLowerCase().includes('mcq');
+      const courseId = body.course !== undefined ? (Number(body.course) || body.course) : question.course;
+      const courseObj = store.courses.find((c) => c.id === courseId);
+      
+      const updatedOptions = isMCQ
+        ? (body.options || question.options || [])
+            .filter((o) => o && o.text && o.text.trim().length > 0)
+            .map((o, idx) => ({
+              id: o.id || Date.now() + idx,
+              text: o.text.trim(),
+              is_correct: Boolean(o.is_correct),
+              order: o.order || idx + 1,
+            }))
+        : [];
+
+      Object.assign(question, {
+        ...body,
+        course: courseId,
+        course_name: courseObj ? `${courseObj.code} - ${courseObj.name}` : question.course_name,
+        options: updatedOptions,
+      });
       saveStore(store);
       return ok(question);
     }

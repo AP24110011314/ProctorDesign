@@ -83,14 +83,27 @@ class QuestionSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
 
+    def to_internal_value(self, data):
+        # Non-MCQ questions (e.g. short_answer) do not use options.
+        # Clear options if passed so blank option validation is skipped.
+        question_type = data.get('type', getattr(self.instance, 'type', None))
+        if question_type and question_type not in ['mcq_single', 'mcq_multi']:
+            if hasattr(data, '_mutable') and not data._mutable:
+                data = data.copy()
+            elif isinstance(data, dict):
+                data = dict(data)
+            data['options'] = []
+        return super().to_internal_value(data)
+
     def create(self, validated_data):
         """Create question with options"""
         options_data = validated_data.pop('options', [])
         question = Question.objects.create(**validated_data)
 
         # Create options if MCQ
-        for option_data in options_data:
-            QuestionOption.objects.create(question=question, **option_data)
+        if question.type in ['mcq_single', 'mcq_multi']:
+            for option_data in options_data:
+                QuestionOption.objects.create(question=question, **option_data)
 
         return question
 
@@ -106,8 +119,9 @@ class QuestionSerializer(serializers.ModelSerializer):
         # Replace options if provided
         if options_data is not None:
             instance.options.all().delete()
-            for option_data in options_data:
-                QuestionOption.objects.create(question=instance, **option_data)
+            if instance.type in ['mcq_single', 'mcq_multi']:
+                for option_data in options_data:
+                    QuestionOption.objects.create(question=instance, **option_data)
 
         return instance
 

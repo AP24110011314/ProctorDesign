@@ -26,6 +26,7 @@ export const QuestionBank = () => {
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
+  const [viewMode, setViewMode] = useState('cards'); // 'cards' (default) | 'table'
 
   // Filters
   const [filters, setFilters] = useState({
@@ -42,6 +43,7 @@ export const QuestionBank = () => {
     difficulty: 'medium',
     topic: '',
     marks: 1.0,
+    model_answer: '',
     options: [
       { text: '', is_correct: false, order: 0 },
       { text: '', is_correct: false, order: 1 },
@@ -110,18 +112,62 @@ export const QuestionBank = () => {
     e.preventDefault();
     setError('');
 
+    const isMCQ = isMCQType(formData.type);
+    const cleanedOptions = isMCQ
+      ? formData.options.filter((opt) => opt.text && opt.text.trim().length > 0)
+      : [];
+
+    if (isMCQ) {
+      if (cleanedOptions.length < 2) {
+        setError('MCQ questions require at least 2 options with text.');
+        return;
+      }
+      const hasCorrect = cleanedOptions.some((opt) => opt.is_correct);
+      if (!hasCorrect) {
+        setError('Please mark at least one option as correct.');
+        return;
+      }
+    }
+
+    const payload = {
+      ...formData,
+      course: Number(formData.course) || formData.course,
+      marks: parseFloat(formData.marks) || 1.0,
+      model_answer: !isMCQ ? (formData.model_answer || '').trim() : '',
+      options: cleanedOptions,
+    };
+
     try {
       if (editingQuestion) {
-        await questionService.updateQuestion(editingQuestion.id, formData);
+        await questionService.updateQuestion(editingQuestion.id, payload);
       } else {
-        await questionService.createQuestion(formData);
+        await questionService.createQuestion(payload);
       }
       setShowForm(false);
       setEditingQuestion(null);
       resetForm();
       loadData();
     } catch (err) {
-      setError(err.response?.data?.error?.message || 'Failed to save question');
+      const data = err.response?.data;
+      let msg = 'Failed to save question';
+      if (typeof data === 'string') {
+        msg = data;
+      } else if (data?.error?.message) {
+        msg = data.error.message;
+      } else if (data?.detail) {
+        msg = data.detail;
+      } else if (data && typeof data === 'object') {
+        const firstKey = Object.keys(data)[0];
+        const val = data[firstKey];
+        if (Array.isArray(val)) {
+          msg = `${firstKey}: ${val[0]}`;
+        } else if (typeof val === 'string') {
+          msg = `${firstKey}: ${val}`;
+        } else if (typeof val === 'object') {
+          msg = JSON.stringify(val);
+        }
+      }
+      setError(msg);
     }
   };
 
@@ -135,9 +181,19 @@ export const QuestionBank = () => {
       difficulty: question.difficulty,
       topic: question.topic || '',
       marks: question.marks,
-      options: existingOptions || [],
+      model_answer: question.model_answer || '',
+      options:
+        existingOptions && existingOptions.length > 0
+          ? existingOptions
+          : [
+              { text: '', is_correct: false, order: 0 },
+              { text: '', is_correct: false, order: 1 },
+              { text: '', is_correct: false, order: 2 },
+              { text: '', is_correct: false, order: 3 },
+            ],
     });
     setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id) => {
@@ -159,6 +215,7 @@ export const QuestionBank = () => {
       difficulty: 'medium',
       topic: '',
       marks: 1.0,
+      model_answer: '',
       options: [
         { text: '', is_correct: false, order: 0 },
         { text: '', is_correct: false, order: 1 },
@@ -173,10 +230,35 @@ export const QuestionBank = () => {
   return (
     <div className="question-bank-container">
       <div className="page-header">
-        <h1>Question Bank</h1>
-        <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Cancel' : '+ Add Question'}
-        </button>
+        <div>
+          <h1>Question Bank</h1>
+          <p className="page-subtitle">
+            Manage your questions across all assigned courses with full options and evaluation rubrics.
+          </p>
+        </div>
+        <div className="page-header-actions">
+          <div className="view-mode-toggle" role="group" aria-label="View Mode">
+            <button
+              type="button"
+              className={`view-toggle-btn ${viewMode === 'cards' ? 'active' : ''}`}
+              onClick={() => setViewMode('cards')}
+              title="Cards view — spacious layout with full questions, options and model answers"
+            >
+              ▤ Cards
+            </button>
+            <button
+              type="button"
+              className={`view-toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
+              onClick={() => setViewMode('table')}
+              title="Table view — compact spreadsheet format"
+            >
+              ☰ Table
+            </button>
+          </div>
+          <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
+            {showForm ? 'Cancel' : '+ Add Question'}
+          </button>
+        </div>
       </div>
 
       {error && <div className="error-message">{error}</div>}
@@ -289,7 +371,7 @@ export const QuestionBank = () => {
                   name="marks"
                   value={formData.marks}
                   onChange={handleFormChange}
-                  min="0"
+                  min="0.5"
                   step="0.5"
                   required
                 />
@@ -303,7 +385,7 @@ export const QuestionBank = () => {
                 name="topic"
                 value={formData.topic}
                 onChange={handleFormChange}
-                placeholder="e.g., Loops, Data Structures"
+                placeholder="e.g., Loops, Data Structures, Operating Systems"
               />
             </div>
 
@@ -314,14 +396,18 @@ export const QuestionBank = () => {
                 value={formData.text}
                 onChange={handleFormChange}
                 rows="4"
+                placeholder="Enter the complete question text..."
                 required
               />
             </div>
 
-            {/* Options for MCQ */}
-            {isMCQType(formData.type) && (
+            {/* Options for MCQ or Model Answer for Short Answer */}
+            {isMCQType(formData.type) ? (
               <div className="options-section">
-                <h3>Options</h3>
+                <div className="options-header">
+                  <h3>Options</h3>
+                  <small className="options-hint">Check the box for the correct option(s)</small>
+                </div>
                 {formData.options.map((option, index) => (
                   <div key={index} className="option-row">
                     <input
@@ -330,6 +416,7 @@ export const QuestionBank = () => {
                       onChange={(e) =>
                         handleOptionChange(index, 'is_correct', e.target.checked)
                       }
+                      title="Mark as correct answer"
                     />
                     <input
                       type="text"
@@ -343,6 +430,7 @@ export const QuestionBank = () => {
                         type="button"
                         onClick={() => removeOption(index)}
                         className="btn-delete-small"
+                        title="Delete option"
                       >
                         ×
                       </button>
@@ -352,6 +440,23 @@ export const QuestionBank = () => {
                 <button type="button" onClick={addOption} className="btn-secondary">
                   + Add Option
                 </button>
+              </div>
+            ) : (
+              <div className="options-section subjective-section">
+                <h3>Subjective Evaluation Guide</h3>
+                <div className="form-group">
+                  <label>Model / Reference Answer (Optional)</label>
+                  <textarea
+                    name="model_answer"
+                    value={formData.model_answer}
+                    onChange={handleFormChange}
+                    rows="3"
+                    placeholder="Provide key points, keywords, or a model answer to guide faculty during subjective grading..."
+                  />
+                  <small className="form-hint">
+                    This reference answer will be shown in the Evaluation Queue to guide subjective grading.
+                  </small>
+                </div>
               </div>
             )}
 
@@ -375,161 +480,220 @@ export const QuestionBank = () => {
         </div>
       )}
 
-      {/* Questions Table (Desktop / Tablet view) */}
-      <div className="questions-table questions-table-desktop">
-        <table>
-          <thead>
-            <tr>
-              <th>Question</th>
-              <th>Course</th>
-              <th>Type</th>
-              <th>Difficulty</th>
-              <th>Topic</th>
-              <th>Marks</th>
-              <th>Options</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {questions.length === 0 ? (
-              <tr>
-                <td colSpan="8" className="empty-state">
-                  No questions found. Create your first question to get started.
-                </td>
-              </tr>
-            ) : (
-              questions.map((question) => {
-                const rowOptions = getQuestionOptions(question);
-                return (
-                <tr key={question.id}>
-                  <td className="question-text">{question.text}</td>
-                  <td>{question.course_name}</td>
-                  <td>
-                    <span className="badge">{String(question.type || '').replace('_', ' ')}</span>
-                  </td>
-                  <td>
-                    <span className={`badge badge-${question.difficulty}`}>
-                      {question.difficulty}
-                    </span>
-                  </td>
-                  <td>{question.topic || '-'}</td>
-                  <td>{question.marks}</td>
-                  <td className="question-options-cell">
-                    {isMCQType(question.type) ? (
-                      rowOptions.length > 0 ? (
-                        <ul className="question-options-list">
-                          {rowOptions.map((opt, idx) => (
-                            <li
-                              key={opt.id ?? idx}
-                              className={opt.is_correct ? 'option-correct' : ''}
-                            >
-                              {opt.is_correct ? '✓ ' : ''}
-                              {opt.text}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <span className="options-missing">No options</span>
-                      )
-                    ) : (
-                      <span className="options-na">—</span>
-                    )}
-                  </td>
-                  <td className="actions">
-                    <button onClick={() => handleEdit(question)} className="btn-icon" aria-label="Edit question">
-                      ✏️
-                    </button>
-                    <button onClick={() => handleDelete(question.id)} className="btn-icon" aria-label="Delete question">
-                      🗑️
-                    </button>
-                  </td>
-                </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Questions Cards (Mobile view - complete question with no cut-off) */}
-      <div className="questions-mobile-cards">
-        {questions.length === 0 ? (
-          <div className="empty-state">
-            No questions found. Create your first question to get started.
-          </div>
-        ) : (
-          questions.map((question) => {
-            const rowOptions = getQuestionOptions(question);
-            return (
-              <div key={question.id} className="qb-mobile-card">
-                <div className="qb-card-header">
-                  <div className="qb-card-badges">
-                    <span className="badge badge-course">{question.course_name || 'Course'}</span>
-                    <span className={`badge badge-${question.difficulty}`}>
-                      {question.difficulty}
-                    </span>
-                    <span className="badge">
-                      {String(question.type || '').replace('_', ' ')}
-                    </span>
+      {/* Cards View (Default — optimal for laptops, desktops, tablets, and phones) */}
+      {viewMode === 'cards' && (
+        <div className="questions-cards-feed">
+          {questions.length === 0 ? (
+            <div className="empty-state">
+              No questions found. Create your first question to get started.
+            </div>
+          ) : (
+            questions.map((question, qIdx) => {
+              const rowOptions = getQuestionOptions(question);
+              const isMCQ = isMCQType(question.type);
+              return (
+                <div key={question.id} className="qb-full-card">
+                  <div className="qb-card-topbar">
+                    <div className="qb-card-badges">
+                      <span className="qb-card-index">Q{qIdx + 1}</span>
+                      <span className="badge badge-course">{question.course_name || 'Course'}</span>
+                      <span className={`badge badge-${question.difficulty}`}>
+                        {question.difficulty}
+                      </span>
+                      <span className="badge">
+                        {String(question.type || '').replace('_', ' ')}
+                      </span>
+                      {question.topic && (
+                        <span className="badge badge-topic">
+                          📁 {question.topic}
+                        </span>
+                      )}
+                    </div>
+                    <div className="qb-card-meta-right">
+                      <span className="qb-card-marks">
+                        {question.marks} {Number(question.marks) === 1 ? 'mark' : 'marks'}
+                      </span>
+                      <div className="qb-card-actions-inline">
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(question)}
+                          className="btn-card-action btn-card-edit"
+                          title="Edit Question"
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(question.id)}
+                          className="btn-card-action btn-card-delete"
+                          title="Delete Question"
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <span className="qb-card-marks">
-                    {question.marks} {Number(question.marks) === 1 ? 'mark' : 'marks'}
-                  </span>
-                </div>
 
-                <div className="qb-card-body">
-                  <p className="qb-card-question-text">{question.text}</p>
-                  {question.topic && (
-                    <div className="qb-card-topic">
-                      <span className="topic-label">Topic:</span> {question.topic}
+                  <div className="qb-card-question-box">
+                    <p className="qb-card-question-text">{question.text}</p>
+                  </div>
+
+                  {isMCQ ? (
+                    <div className="qb-card-options-box">
+                      <div className="qb-options-title">
+                        <span>Answer Choices:</span>
+                        <span className="qb-options-count">{rowOptions.length} options</span>
+                      </div>
+                      {rowOptions.length > 0 ? (
+                        <div className="qb-options-grid">
+                          {rowOptions.map((opt, idx) => (
+                            <div
+                              key={opt.id ?? idx}
+                              className={`qb-option-item ${opt.is_correct ? 'option-correct' : ''}`}
+                            >
+                              <span className="opt-marker">
+                                {opt.is_correct ? '✓' : String.fromCharCode(65 + idx)}
+                              </span>
+                              <span className="opt-text">{opt.text}</span>
+                              {opt.is_correct && (
+                                <span className="opt-correct-tag">Correct Answer</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="options-missing">No options added</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="qb-card-subjective-box">
+                      <div className="qb-subjective-header">
+                        <span className="qb-subj-badge">Subjective / Short Answer</span>
+                        {question.model_answer && (
+                          <span className="qb-subj-has-key">✓ Reference answer available</span>
+                        )}
+                      </div>
+                      {question.model_answer ? (
+                        <div className="qb-model-answer-content">
+                          <strong>Model / Reference Answer:</strong>
+                          <p>{question.model_answer}</p>
+                        </div>
+                      ) : (
+                        <p className="qb-model-answer-placeholder">
+                          No model answer set. Answers will be reviewed and graded manually by faculty in the Evaluation Queue.
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
+              );
+            })
+          )}
+        </div>
+      )}
 
-                {isMCQType(question.type) && (
-                  <div className="qb-card-options">
-                    <div className="qb-options-label">Options</div>
-                    {rowOptions.length > 0 ? (
-                      <ul className="qb-mobile-options-list">
-                        {rowOptions.map((opt, idx) => (
-                          <li
-                            key={opt.id ?? idx}
-                            className={opt.is_correct ? 'option-correct' : ''}
-                          >
-                            <span className="opt-marker">
-                              {opt.is_correct ? '✓' : '○'}
-                            </span>
-                            <span className="opt-text">{opt.text}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <span className="options-missing">No options</span>
-                    )}
-                  </div>
-                )}
-
-                <div className="qb-card-actions">
-                  <button
-                    type="button"
-                    onClick={() => handleEdit(question)}
-                    className="qb-btn-action qb-btn-edit"
-                  >
-                    ✏️ Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(question.id)}
-                    className="qb-btn-action qb-btn-delete"
-                  >
-                    🗑️ Delete
-                  </button>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
+      {/* Table View (Alternative compact view) */}
+      {viewMode === 'table' && (
+        <div className="questions-table questions-table-desktop">
+          <table>
+            <thead>
+              <tr>
+                <th style={{ width: '38%' }}>Question</th>
+                <th style={{ width: '14%' }}>Course</th>
+                <th style={{ width: '10%' }}>Type</th>
+                <th style={{ width: '9%' }}>Difficulty</th>
+                <th style={{ width: '7%' }}>Marks</th>
+                <th style={{ width: '14%' }}>Options / Answer</th>
+                <th style={{ width: '8%', textAlign: 'center' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {questions.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="empty-state">
+                    No questions found. Create your first question to get started.
+                  </td>
+                </tr>
+              ) : (
+                questions.map((question) => {
+                  const rowOptions = getQuestionOptions(question);
+                  const isMCQ = isMCQType(question.type);
+                  return (
+                    <tr key={question.id}>
+                      <td className="question-text">
+                        <div className="question-text-content">{question.text}</div>
+                        {question.topic && (
+                          <div className="table-topic-pill">Topic: {question.topic}</div>
+                        )}
+                      </td>
+                      <td>
+                        <span className="table-course-name">{question.course_name}</span>
+                      </td>
+                      <td>
+                        <span className="badge">{String(question.type || '').replace('_', ' ')}</span>
+                      </td>
+                      <td>
+                        <span className={`badge badge-${question.difficulty}`}>
+                          {question.difficulty}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="table-marks-pill">{question.marks}M</span>
+                      </td>
+                      <td className="question-options-cell">
+                        {isMCQ ? (
+                          rowOptions.length > 0 ? (
+                            <ul className="question-options-list">
+                              {rowOptions.map((opt, idx) => (
+                                <li
+                                  key={opt.id ?? idx}
+                                  className={opt.is_correct ? 'option-correct' : ''}
+                                >
+                                  {opt.is_correct ? '✓ ' : '○ '}
+                                  {opt.text}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <span className="options-missing">No options</span>
+                          )
+                        ) : (
+                          <div className="table-short-answer-preview">
+                            <span className="table-short-badge">Short Answer</span>
+                            {question.model_answer && (
+                              <small className="table-model-snippet" title={question.model_answer}>
+                                Key: {question.model_answer.substring(0, 40)}...
+                              </small>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="actions" style={{ textAlign: 'center' }}>
+                        <button
+                          onClick={() => handleEdit(question)}
+                          className="btn-icon"
+                          aria-label="Edit question"
+                          title="Edit"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={() => handleDelete(question.id)}
+                          className="btn-icon"
+                          aria-label="Delete question"
+                          title="Delete"
+                        >
+                          🗑️
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };

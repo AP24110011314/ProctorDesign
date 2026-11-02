@@ -65,6 +65,33 @@ class QuestionBankTests(TestCase):
         self.assertEqual(Question.objects.count(), 1)
         self.assertEqual(QuestionOption.objects.count(), 4)
 
+    def test_create_short_answer_question(self):
+        """Test creating short_answer questions with model_answer and optional dummy options"""
+        self.client.force_authenticate(user=self.faculty)
+
+        question_data = {
+            'course': self.course.id,
+            'type': 'short_answer',
+            'text': 'Explain the difference between a process and a thread.',
+            'difficulty': 'medium',
+            'topic': 'Operating Systems',
+            'marks': 5.0,
+            'model_answer': 'A process is an executing program with its own address space, while a thread is a lightweight unit of execution within a process.',
+            # Frontend may submit with empty or dummy options when switching types:
+            'options': [
+                {'text': '', 'is_correct': False, 'order': 0},
+                {'text': '', 'is_correct': False, 'order': 1},
+            ]
+        }
+
+        response = self.client.post('/api/questions/', question_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        q = Question.objects.get(text=question_data['text'])
+        self.assertEqual(q.type, 'short_answer')
+        self.assertEqual(q.marks, 5.0)
+        self.assertEqual(q.model_answer, question_data['model_answer'])
+        self.assertEqual(q.options.count(), 0)
+
     def test_mcq_must_have_correct_answer(self):
         """Test FR-8: MCQ validation requires correct answer"""
         self.client.force_authenticate(user=self.faculty)
