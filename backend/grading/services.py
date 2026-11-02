@@ -167,7 +167,7 @@ def suggest_marks(answer):
 
     Raises ValueError if the assist is disabled or cannot run.
     """
-    if not getattr(settings, 'AI_ASSIST_GRADING_ENABLED', False):
+    if not getattr(settings, 'AI_ASSIST_GRADING_ENABLED', True):
         raise ValueError('AI-assist grading is disabled (AI_ASSIST_GRADING_ENABLED=False)')
 
     question = answer.question
@@ -185,9 +185,19 @@ def suggest_marks(answer):
         gemini_result['matched_keywords'] = matched
         return gemini_result
 
-    # 2. Fallback: Keyword-overlap F1 heuristic (ensures tests & offline mode work transparently)
+    # 2. Fallback: Keyword-overlap heuristic (or advisory if model answer absent)
     if not model_ans:
-        raise ValueError('No model answer set for this question')
+        return {
+            'method': 'advisory-manual',
+            'suggested_marks': 0.0,
+            'max_marks': float(max_marks),
+            'ideal_answer': 'No reference model answer was configured for this question.',
+            'missing_concepts': 'Cannot automatically detect missing concepts without a reference answer.',
+            'feedback': 'Please grade this subjective response manually.',
+            'rationale': 'No reference answer provided for automated scoring.',
+            'assist_only': True,
+            'disclaimer': 'Suggestion only — please grade manually.',
+        }
 
     expected = _keywords(model_ans)
     given = _keywords(student_ans)

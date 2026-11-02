@@ -278,7 +278,7 @@ PROCTORING_DATA_RETENTION_DAYS = int(os.getenv('PROCTORING_DATA_RETENTION_DAYS',
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip()
 AI_ASSIST_GRADING_ENABLED = os.getenv(
     'AI_ASSIST_GRADING_ENABLED',
-    'True' if GEMINI_API_KEY else 'False'
+    'True'
 ).strip().lower() in ('true', '1', 'yes')
 
 # Production hardening (applies only when DEBUG=False, i.e. on Render).

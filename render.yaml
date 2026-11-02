@@ -32,6 +32,10 @@ services:
         sync: false
       - key: CELERY_ENABLED
         value: False
+      - key: AI_ASSIST_GRADING_ENABLED
+        value: "True"
+      - key: GEMINI_API_KEY
+        sync: false
       - key: CRON_SECRET
         generateValue: true
       - key: CLOUDINARY_CLOUD_NAME
