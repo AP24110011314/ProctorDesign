@@ -20,6 +20,7 @@ export const GradingQueue = () => {
   const [feedback, setFeedback] = useState('');
   const [suggestion, setSuggestion] = useState(null);
   const [suggestState, setSuggestState] = useState('idle'); // idle|loading|off|error
+  const [suggestError, setSuggestError] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -62,19 +63,26 @@ export const GradingQueue = () => {
     setFeedback('');
     setSuggestion(null);
     setSuggestState('idle');
+    setSuggestError('');
   };
 
   const handleSuggest = async () => {
     if (!current) return;
     setSuggestState('loading');
+    setSuggestError('');
     setSuggestion(null);
     try {
       const data = await gradingService.suggestMarks(current.id);
       setSuggestion(data);
       setSuggestState('idle');
     } catch (err) {
-      // 403 with code ai_assist_disabled means the backend flag is off
-      if (err.response?.status === 403) {
+      const msg =
+        err.response?.data?.error?.message ||
+        err.response?.data?.detail ||
+        err.message ||
+        'Could not generate a suggestion.';
+      setSuggestError(msg);
+      if (err.response?.status === 403 || err.response?.data?.error?.code === 'ai_assist_disabled') {
         setSuggestState('off');
       } else {
         setSuggestState('error');
@@ -83,7 +91,15 @@ export const GradingQueue = () => {
   };
 
   const applySuggestion = () => {
-    if (suggestion) setMarks(suggestion.suggested_marks);
+    if (suggestion && suggestion.suggested_marks !== undefined) {
+      setMarks(String(suggestion.suggested_marks));
+    }
+  };
+
+  const applyFeedback = () => {
+    if (suggestion?.feedback) {
+      setFeedback(suggestion.feedback);
+    }
   };
 
   const handleSaveNext = async (e) => {
@@ -208,31 +224,121 @@ export const GradingQueue = () => {
               </div>
 
               <div className="suggest-row">
-                <button type="button" onClick={handleSuggest} className="btn-secondary">
-                  Get AI suggestion
+                <button
+                  type="button"
+                  onClick={handleSuggest}
+                  disabled={suggestState === 'loading'}
+                  className="btn-secondary btn-ai-suggest"
+                >
+                  {suggestState === 'loading' ? (
+                    <>
+                      <span className="ai-spinner" aria-hidden="true" />
+                      <span>Analyzing with Gemini AI...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="ai-sparkle">✨</span>
+                      <span>Get AI suggestion</span>
+                    </>
+                  )}
                 </button>
                 {suggestState === 'off' && (
-                  <span className="hint">AI assist is disabled by the administrator.</span>
+                  <span className="hint error">
+                    {suggestError || 'AI assist is disabled by administrator.'}
+                  </span>
                 )}
                 {suggestState === 'error' && (
-                  <span className="hint error">Could not generate a suggestion.</span>
+                  <span className="hint error">
+                    {suggestError || 'Could not generate a suggestion.'}
+                  </span>
                 )}
               </div>
 
               {suggestion && (
-                <div className="suggestion">
-                  <p>
-                    Suggested marks: <strong>{suggestion.suggested_marks}</strong> (assist
-                    only — you enter the final marks)
-                  </p>
+                <div className="ai-suggestion-card">
+                  <div className="ai-card-header">
+                    <div className="ai-badge">
+                      <span className="ai-sparkle">✨</span>
+                      <strong>
+                        {suggestion.method?.includes('gemini')
+                          ? 'Gemini AI Assessment'
+                          : 'AI Assist Suggestion'}
+                      </strong>
+                    </div>
+                    <div className="ai-score-pill">
+                      <span className="ai-score-label">Suggested:</span>
+                      <strong className="ai-score-val">
+                        {suggestion.suggested_marks} / {current.max_marks} marks
+                      </strong>
+                      <button
+                        type="button"
+                        onClick={applySuggestion}
+                        className="btn-apply-score"
+                        title="Copy suggested marks into input"
+                      >
+                        Apply Score
+                      </button>
+                    </div>
+                  </div>
+
+                  {suggestion.ideal_answer && (
+                    <div className="ai-detail-block">
+                      <h5>
+                        <span className="icon">📘</span> Correct / Ideal Answer
+                      </h5>
+                      <p className="ai-detail-text">{suggestion.ideal_answer}</p>
+                    </div>
+                  )}
+
+                  {suggestion.missing_concepts && (
+                    <div className="ai-detail-block missing">
+                      <h5>
+                        <span className="icon">⚠️</span> What is Missing / Needs Improvement
+                      </h5>
+                      <p className="ai-detail-text">{suggestion.missing_concepts}</p>
+                    </div>
+                  )}
+
+                  {suggestion.feedback && (
+                    <div className="ai-detail-block feedback">
+                      <div className="ai-detail-header-inline">
+                        <h5>
+                          <span className="icon">💬</span> Suggested Student Feedback
+                        </h5>
+                        <button
+                          type="button"
+                          onClick={applyFeedback}
+                          className="btn-apply-feedback"
+                          title="Copy feedback to textarea"
+                        >
+                          Use in Feedback
+                        </button>
+                      </div>
+                      <p className="ai-detail-text">{suggestion.feedback}</p>
+                    </div>
+                  )}
+
+                  {suggestion.rationale && (
+                    <div className="ai-detail-block rationale">
+                      <h5>
+                        <span className="icon">📋</span> Scoring Rationale
+                      </h5>
+                      <p className="ai-detail-text">{suggestion.rationale}</p>
+                    </div>
+                  )}
+
                   {suggestion.matched_keywords?.length > 0 && (
                     <p className="hint">
                       Matched keywords: {suggestion.matched_keywords.join(', ')}
                     </p>
                   )}
-                  <button type="button" onClick={applySuggestion} className="btn-secondary">
-                    Use suggestion
-                  </button>
+
+                  <div className="ai-disclaimer">
+                    <span className="info-icon">ℹ️</span>
+                    <span>
+                      AI suggestions are strictly advisory. The faculty member always enters and saves final marks.
+                    </span>
+                  </div>
                 </div>
               )}
 

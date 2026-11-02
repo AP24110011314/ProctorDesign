@@ -980,7 +980,42 @@ export const handleMockRequest = async (config) => {
   }
 
   if (url.includes('/grading/answers/') && url.endsWith('/suggest/') && method === 'post') {
-    return ok({ suggested_marks: 4.5, feedback: 'Accurately explains virtual memory isolation vs shared heap/threads.' });
+    const ansMatch = url.match(/\/grading\/answers\/(\d+)\/suggest\//);
+    const ansId = ansMatch ? parseInt(ansMatch[1], 10) : null;
+    const answer = store.gradingQueue.find((q) => q.id === ansId) || store.gradingQueue[0] || {};
+    const maxMarks = parseFloat(answer.max_marks) || 5.0;
+    const stuText = (answer.text_answer || answer.student_answer || '').trim();
+    const modelAns = (answer.model_answer || '').trim();
+    const qText = answer.question_text || 'Subjective Question';
+
+    const isUnknown = !stuText || /don['’]?t know|no idea|skip|unknown/i.test(stuText) || stuText.length < 6;
+
+    if (isUnknown) {
+      return ok({
+        method: 'gemini-evaluation',
+        suggested_marks: 0.0,
+        max_marks: maxMarks,
+        ideal_answer: modelAns || `A complete response to '${qText}' should thoroughly cover the fundamental principles and mechanisms.`,
+        missing_concepts: "The student explicitly stated they do not know the answer or provided an empty response. All essential technical concepts, keywords, and reasoning are missing.",
+        feedback: "It looks like you were unsure about this topic. Be sure to review the core concepts in the course material to prepare for future assessments.",
+        rationale: "0.00 marks suggested because no valid attempt or relevant conceptual knowledge was demonstrated.",
+        assist_only: true,
+        disclaimer: "AI suggestion only — verify against student answer before grading.",
+      });
+    }
+
+    // Meaningful answer evaluation
+    return ok({
+      method: 'gemini-evaluation',
+      suggested_marks: Math.round(maxMarks * 0.85 * 2) / 2,
+      max_marks: maxMarks,
+      ideal_answer: modelAns || `A thorough explanation covering the key concepts of ${qText}.`,
+      missing_concepts: "The answer covers the primary concepts well. For full marks, consider elaborating slightly more on the underlying trade-offs or practical implications.",
+      feedback: "Good response! You clearly understand the core principles and explained them logically. Keep up the great work.",
+      rationale: `Awarded ${Math.round(maxMarks * 0.85 * 2) / 2} / ${maxMarks} marks based on strong coverage of key technical concepts with minor room for deeper elaboration.`,
+      assist_only: true,
+      disclaimer: "AI suggestion only — verify against student answer before grading.",
+    });
   }
 
   const gradingPublishMatch = url.match(/^\/grading\/exams\/(\d+)\/publish\/$/);

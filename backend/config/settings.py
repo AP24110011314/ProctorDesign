@@ -17,7 +17,8 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables
+# Load environment variables (check BASE_DIR / '.env', then current working directory)
+load_dotenv(BASE_DIR / '.env')
 load_dotenv()
 
 # Quick-start development settings - unsuitable for production
@@ -272,10 +273,13 @@ CELERY_TIMEZONE = 'UTC'
 PROCTORING_SNAPSHOT_MAX_SIZE_MB = int(os.getenv('PROCTORING_SNAPSHOT_MAX_SIZE_MB', 2))
 PROCTORING_DATA_RETENTION_DAYS = int(os.getenv('PROCTORING_DATA_RETENTION_DAYS', 90))
 
-# AI-assist grading (stretch goal, PRD.md §10): keyword-overlap *suggestions*
-# for short answers. Off by default; suggestions are never auto-applied —
-# faculty always enter the final marks (SRS.md FR-27).
-AI_ASSIST_GRADING_ENABLED = os.getenv('AI_ASSIST_GRADING_ENABLED', 'False') == 'True'
+# AI-assist grading (PRD.md §10): powered by Google Gemini API (gemini-flash-lite-latest)
+# Suggestions are strictly advisory and never auto-applied — faculty always enter final marks (SRS.md FR-27).
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip()
+AI_ASSIST_GRADING_ENABLED = os.getenv(
+    'AI_ASSIST_GRADING_ENABLED',
+    'True' if GEMINI_API_KEY else 'False'
+).strip().lower() in ('true', '1', 'yes')
 
 # Production hardening (applies only when DEBUG=False, i.e. on Render).
 # Render terminates TLS at its proxy and forwards http internally, so we
