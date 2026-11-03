@@ -13,3 +13,4 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f'Auto-submitted {result["submitted"]} expired attempt(s) ({result["remaining"]} remaining)'
         ))
+
