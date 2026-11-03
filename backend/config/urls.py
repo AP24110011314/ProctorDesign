@@ -33,3 +33,9 @@ urlpatterns = [
 # Serve media files in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Custom JSON error handlers for API routes (per external pinger & API reliability)
+handler400 = 'system.views.api_bad_request_handler'
+handler403 = 'system.views.api_permission_denied_handler'
+handler404 = 'system.views.api_not_found_handler'
+handler500 = 'system.views.api_server_error_handler'

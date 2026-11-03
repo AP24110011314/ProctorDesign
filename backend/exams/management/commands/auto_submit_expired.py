@@ -8,15 +8,14 @@ Free-tier Render has no background worker, so the deadline sweep runs via:
 Both share exams/auto_submit.py; Celery beat calls the same code locally.
 """
 from django.core.management.base import BaseCommand
+from exams.auto_submit import sweep_expired_attempts
 
 
 class Command(BaseCommand):
-    help = 'Auto-submit in-progress attempts past their end_time (NFR-14)'
+    help = 'Auto-submit in-progress attempts past their deadline (NFR-14)'
 
     def handle(self, *args, **options):
-        from exams.auto_submit import sweep_expired_attempts
-
-        count = sweep_expired_attempts()
+        result = sweep_expired_attempts()
         self.stdout.write(self.style.SUCCESS(
-            f'Auto-submitted {count} expired attempt(s)'
+            f'Auto-submitted {result["submitted"]} expired attempt(s) ({result["remaining"]} remaining)'
         ))

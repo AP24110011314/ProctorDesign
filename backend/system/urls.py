@@ -9,4 +9,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path('overview/', OverviewView.as_view(), name='system-overview'),
     path('sweep/auto-submit/', AutoSubmitSweepView.as_view(), name='sweep-auto-submit'),
+    path('sweep/auto-submit', AutoSubmitSweepView.as_view(), name='sweep-auto-submit-noslash'),
 ]

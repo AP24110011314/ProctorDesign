@@ -51,6 +51,20 @@ In Render Dashboard → `proctox-backend` → **Environment**:
 * Set `CSRF_TRUSTED_ORIGINS` = `https://<your-project>.vercel.app` *(no trailing slash)*
 * Click **Save Changes** (Render will automatically redeploy with CORS active).
 
+### Step 4: Configure Auto-Submit Sweep (cron-job.org)
+
+Because Render free tier does not have a background Celery beat daemon, an external pinger (e.g. [cron-job.org](https://cron-job.org)) calls the deadline sweep every minute to auto-submit expired attempts (NFR-14).
+
+In your [cron-job.org](https://cron-job.org) console:
+* **URL:** `https://<your-render-service>.onrender.com/api/system/sweep/auto-submit/`
+* **Method:** `POST`
+* **Headers:**
+  * Key: `X-CRON-SECRET`
+  * Value: `<your-CRON_SECRET-from-Render-dashboard>`
+* **Schedule:** Every minute (`* * * * *`)
+* **Request Timeout:** 30 seconds
+* **Failure Alerts:** Enable email on repeated failures
+
 ---
 
 ## 🔍 Troubleshooting

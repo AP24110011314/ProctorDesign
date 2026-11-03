@@ -47,57 +47,91 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
         return super().retrieve(request, *args, **kwargs)
 
 
-class AutoSubmitSweepView(APIView):
+import logging
+from django.http import JsonResponse
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.views.decorators.csrf import csrf_exempt
+
+logger = logging.getLogger(__name__)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class AutoSubmitSweepView(View):
     """Cron sweep without Celery (free-tier production).
 
-    POST /api/system/sweep/auto-submit/ — called every minute by a free
-    external pinger (e.g. cron-job.org). Auth is the shared CRON_SECRET
-    (header ``X-CRON-SECRET`` or ``?secret=``), not JWT, so no login session
-    is needed. This is the one intentional exception to the default-deny
-    @require_role rule: the secret *is* the gate, and an unset CRON_SECRET
-    locks the endpoint (403) rather than opening it.
-
-    Runs exams/auto_submit.py — the same code as Celery beat + lazy checks.
+    POST /api/system/sweep/auto-submit/ — called every minute by external pinger
+    (e.g. cron-job.org).
+    - Method: POST only (anything else returns 405 JSON: {"ok": false, "error": "method_not_allowed"}).
+    - Auth: Compare X-CRON-SECRET header with settings.CRON_SECRET via hmac.compare_digest.
+      Unset/empty CRON_SECRET or invalid/missing secret returns 403 JSON: {"ok": false, "error": "forbidden"}.
+    - Response: tiny JSON: {"ok": true, "submitted": N, "remaining": M}.
+    - Errors: unexpected exceptions return 500 JSON: {"ok": false, "error": "internal"}.
     """
+    http_method_names = ['post']
 
-    permission_classes = [AllowAny]
-    authentication_classes = []
+    def dispatch(self, request, *args, **kwargs):
+        if request.method.lower() != 'post':
+            response = JsonResponse({"ok": False, "error": "method_not_allowed"}, status=405)
+            response['Allow'] = 'POST'
+            return response
+        return super().dispatch(request, *args, **kwargs)
 
-    def _provided_secret(self, request):
-        header = request.headers.get('X-CRON-SECRET', '')
-        if header:
-            return header
-        query = request.query_params.get('secret', '')
-        if query:
-            return query
-        try:
-            body = request.data.get('secret', '') if isinstance(request.data, dict) else ''
-        except Exception:
-            body = ''
-        return body or ''
-
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         expected = getattr(settings, 'CRON_SECRET', '') or ''
+        expected = str(expected).strip()
         if not expected:
-            return Response(
-                {'error': {'code': 'sweep_disabled',
-                           'message': 'Auto-submit sweep is not configured'}},
-                status=403,
-            )
-        if not hmac.compare_digest(str(self._provided_secret(request)), str(expected)):
-            return Response(
-                {'error': {'code': 'forbidden',
-                           'message': 'Invalid sweep secret'}},
-                status=403,
-            )
-        from exams.auto_submit import sweep_expired_attempts
+            return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
 
-        count = sweep_expired_attempts()
-        return Response({'auto_submitted': count})
+        secret_header = (
+            request.META.get('HTTP_X_CRON_SECRET') or
+            request.headers.get('X-CRON-SECRET', '')
+        )
+        secret_header = str(secret_header).strip()
 
-    def get(self, request):
-        # Pingers that only support GET should use POST; fail closed.
-        return self.post(request)
+        if not secret_header or not hmac.compare_digest(secret_header, expected):
+            return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+
+        try:
+            from exams.auto_submit import sweep_expired_attempts
+            result = sweep_expired_attempts(max_batch=200)
+            return JsonResponse({
+                "ok": True,
+                "submitted": result["submitted"],
+                "remaining": result["remaining"],
+                "auto_submitted": result["submitted"],
+            }, status=200)
+        except Exception as exc:
+            logger.exception("Unexpected error in AutoSubmitSweepView: %s", exc)
+            return JsonResponse({"ok": False, "error": "internal"}, status=500)
+
+
+def api_bad_request_handler(request, exception=None):
+    if request.path.startswith('/api/'):
+        return JsonResponse({"ok": False, "error": "bad_request"}, status=400)
+    from django.views.defaults import bad_request
+    return bad_request(request, exception)
+
+
+def api_permission_denied_handler(request, exception=None):
+    if request.path.startswith('/api/'):
+        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+    from django.views.defaults import permission_denied
+    return permission_denied(request, exception)
+
+
+def api_not_found_handler(request, exception=None):
+    if request.path.startswith('/api/'):
+        return JsonResponse({"ok": False, "error": "not_found"}, status=404)
+    from django.views.defaults import page_not_found
+    return page_not_found(request, exception)
+
+
+def api_server_error_handler(request):
+    if request.path.startswith('/api/'):
+        return JsonResponse({"ok": False, "error": "internal"}, status=500)
+    from django.views.defaults import server_error
+    return server_error(request)
 
 
 class OverviewView(APIView):
